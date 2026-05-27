@@ -94,13 +94,17 @@
     function setColor(h){ currentColor=h; E('active-swatch').style.backgroundColor=h; Array.from(E('palette-grid').children).forEach(c=>c.style.backgroundColor===h?c.classList.add('active'):c.classList.remove('active')); }
     function render(){ mainCtx.fillStyle='#fff'; mainCtx.fillRect(0,0,gridSize,gridSize); for(let y=0;y<gridSize;y++)for(let x=0;x<gridSize;x++){ if(outline[y][x]){mainCtx.fillStyle='#222';mainCtx.fillRect(x,y,1,1);} else if(colorGrid[y][x]){mainCtx.fillStyle=colorGrid[y][x];mainCtx.fillRect(x,y,1,1);} } }
     
-    mainCanvas.onmousedown=e=>{
-      if(!img)return; const r=mainCanvas.getBoundingClientRect(), x=Math.floor((e.clientX-r.left)/(r.width/gridSize)), y=Math.floor((e.clientY-r.top)/(r.height/gridSize));
+    const fillLogic = (clientX, clientY) => {
+      if(!img)return; const r=mainCanvas.getBoundingClientRect(), x=Math.floor((clientX-r.left)/(r.width/gridSize)), y=Math.floor((clientY-r.top)/(r.height/gridSize));
       if(outline[y][x] || colorGrid[y][x]===currentColor)return;
       const t=colorGrid[y][x], st=[[x,y]];
       while(st.length>0){ const[cx,cy]=st.pop(); if(cx<0||cx>=gridSize||cy<0||cy>=gridSize||outline[cy][cx]||colorGrid[cy][cx]!==t)continue; colorGrid[cy][cx]=currentColor; st.push([cx+1,cy],[cx-1,cy],[cx,cy+1],[cx,cy-1]); }
       render(); updateProgress();
     };
+
+    mainCanvas.onmousedown=e=>fillLogic(e.clientX, e.clientY);
+    mainCanvas.ontouchstart=e=>{e.preventDefault(); fillLogic(e.touches[0].clientX, e.touches[0].clientY);};
+
     function updateProgress(){
       if(total===0)return; let p=0; for(let y=0;y<gridSize;y++)for(let x=0;x<gridSize;x++)if(!outline[y][x]&&target[y][x].toUpperCase()!=='#FFFFFF'&&colorGrid[y][x])p++;
       const pct=Math.round((p/total)*100); E('progress-bar').style.width=pct+'%'; E('progress-text').textContent=pct+'%';
