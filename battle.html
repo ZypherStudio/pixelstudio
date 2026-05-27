@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pixel Battle</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  body{background:#121214;color:#e0e0e0;font-family:'Inter',sans-serif;overflow:hidden;user-select:none;}
+  .pixelated{image-rendering:pixelated;image-rendering:crisp-edges;}
+  .checkered{background-color:#2a2a2a;background-image:linear-gradient(45deg,#1e1e1e 25%,transparent 25%,transparent 75%,#1e1e1e 75%,#1e1e1e),linear-gradient(45deg,#1e1e1e 25%,transparent 25%,transparent 75%,#1e1e1e 75%,#1e1e1e);background-size:16px 16px;background-position:0 0,8px 8px;}
+  .color-swatch{width:100%;aspect-ratio:1;border-radius:4px;cursor:pointer;border:2px solid transparent;transition:transform 0.1s;}
+  .color-swatch:hover{transform:scale(1.1);}
+  .color-swatch.active{border-color:white;transform:scale(1.15);box-shadow:0 0 10px rgba(255,255,255,0.2);}
+  #overlay{position:absolute;inset:0;background:rgba(0,0,0,0.8);z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;backdrop-filter:blur(5px);}
+  .hidden{display:none !important;}
+  .glitch{animation:glitch 0.2s linear infinite alternate;}
+  @keyframes glitch{0%{transform:translate(2px,0)}100%{transform:translate(-2px,0)}}
+</style>
+</head>
+<body class="h-screen w-screen flex flex-col">
+  <header class="h-16 bg-[#1e1e24] border-b border-[#2a2a32] flex items-center justify-between px-6 shrink-0 shadow-md">
+    <div class="flex items-center gap-4">
+      <a href="menu.html" class="w-8 h-8 rounded bg-[#121214] flex items-center justify-center text-gray-400 hover:text-white border border-[#2a2a32]"><i class="fa-solid fa-arrow-left"></i></a>
+      <h1 class="font-bold text-white uppercase tracking-wide flex items-center gap-2"><i class="fa-solid fa-khanda text-[#e84118]"></i> Pixel Battle</h1>
+    </div>
+    <div class="flex items-center gap-6">
+      <div class="text-center">
+        <div class="text-[10px] text-gray-500 uppercase font-bold">Time Left</div>
+        <div id="timer" class="text-2xl font-black text-white font-mono w-16">00</div>
+      </div>
+      <button id="btn-giveup" class="bg-[#121214] hover:bg-red-900/50 border border-[#2a2a32] text-white px-4 py-2 rounded font-bold uppercase text-xs shadow-lg hidden">Give Up</button>
+    </div>
+  </header>
+
+  <main class="flex-1 flex overflow-hidden relative">
+    <div id="overlay">
+      <h2 id="overlay-title" class="text-4xl font-black text-white mb-4 uppercase tracking-widest text-center">Are you ready?</h2>
+      <p id="overlay-desc" class="text-gray-400 mb-8 max-w-md text-center">Memorize the image in 5 seconds. Draw it perfectly in 60 seconds.</p>
+      <div id="score-display" class="text-6xl font-black text-[#e84118] mb-8 hidden">95%</div>
+      <button id="btn-start" class="bg-[#e84118] hover:bg-[#c23616] text-white px-8 py-4 rounded-xl font-black uppercase text-xl shadow-[0_0_20px_rgba(232,65,24,0.4)] transition-transform hover:scale-105">Start Challenge</button>
+    </div>
+
+    <!-- Workspace -->
+    <section class="flex-1 flex flex-col items-center justify-center p-8">
+      <div class="checkered shadow-2xl border border-[#2a2a32] rounded-lg overflow-hidden bg-white relative" style="width:512px;height:512px;">
+        <!-- Target Canvas (Used for memorize phase) -->
+        <canvas id="target-canvas" width="16" height="16" class="absolute inset-0 w-full h-full pixelated z-10 hidden"></canvas>
+        <!-- Main Canvas -->
+        <canvas id="main-canvas" width="16" height="16" class="absolute inset-0 w-full h-full pixelated cursor-crosshair z-0"></canvas>
+      </div>
+    </section>
+
+    <!-- Sidebar Tools -->
+    <aside class="w-24 bg-[#1e1e24] border-l border-[#2a2a32] flex flex-col z-20 shadow-xl items-center py-6">
+      <div class="w-12 h-12 bg-[#121214] rounded-lg border border-[#2a2a32] flex items-center justify-center text-white mb-6" id="current-color" style="background:#000000"></div>
+      <div id="palette" class="flex flex-col gap-2 w-12 overflow-y-auto pb-4"></div>
+      <div class="mt-auto">
+        <button id="btn-eraser" class="w-12 h-12 bg-[#121214] rounded-lg border border-[#2a2a32] flex items-center justify-center text-gray-400 hover:text-white hover:bg-[#2a2a32] transition-colors"><i class="fa-solid fa-eraser"></i></button>
+      </div>
+    </aside>
+  </main>
+
+  <script>
+    const E=id=>document.getElementById(id), C=id=>E(id).getContext('2d',{willReadFrequently:true});
+    const mainCtx=C('main-canvas'), targetCtx=C('target-canvas');
+    let state='IDLE', timer=0, interval, currentColor='#000000', isDrawing=false, isEraser=false;
+    const size=16;
+
+    // Sprite Data
+    const sprites = [
+      { name: 'Sword', colors: ['#5a6b8c','#e0e0e0','#fbc531','#8c7ae6'], data: [
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,2],
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,1,2,1],
+        [0,0,0,0,0,0,0,0,0,0,0,0,1,2,1,0],
+        [0,0,0,0,0,0,0,0,0,0,0,1,2,1,0,0],
+        [0,0,0,0,0,0,0,0,0,0,1,2,1,0,0,0],
+        [0,0,0,0,0,0,0,0,0,1,2,1,0,0,0,0],
+        [0,0,0,0,0,0,0,0,1,2,1,0,0,0,0,0],
+        [0,0,0,0,0,0,0,1,2,1,0,0,0,0,0,0],
+        [0,0,0,0,0,0,1,2,1,0,0,0,0,0,0,0],
+        [0,0,0,0,0,1,2,1,0,0,0,0,0,0,0,0],
+        [0,0,0,0,3,3,1,0,0,0,0,0,0,0,0,0],
+        [0,0,0,3,3,3,3,0,0,0,0,0,0,0,0,0],
+        [0,0,1,3,3,4,3,0,0,0,0,0,0,0,0,0],
+        [0,1,0,0,3,3,3,0,0,0,0,0,0,0,0,0],
+        [1,0,0,0,0,3,3,0,0,0,0,0,0,0,0,0],
+        [2,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+      ]},
+      { name: 'Heart', colors: ['#e84118','#c23616','#ffffff'], data: [
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,1,1,1,1,0,0,1,1,1,1,0,0,0],
+        [0,0,1,1,1,1,1,1,1,1,1,1,1,1,0,0],
+        [0,1,1,1,3,1,1,1,1,1,1,1,1,1,1,0],
+        [0,1,1,3,3,1,1,1,1,1,1,1,1,1,1,0],
+        [0,1,1,1,1,1,1,1,1,1,1,2,2,1,1,0],
+        [0,1,1,1,1,1,1,1,1,1,1,2,2,1,1,0],
+        [0,0,1,1,1,1,1,1,1,1,1,1,1,1,0,0],
+        [0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0],
+        [0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0],
+        [0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0],
+        [0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+      ]}
+    ];
+
+    let currentSprite, userGrid, targetGrid;
+
+    // Init Palette
+    const basicColors = ['#000000','#ffffff','#e84118','#c23616','#fbc531','#e1b12c','#4cd137','#44bd32','#00a8ff','#0097e6','#9c88ff','#8c7ae6','#5a6b8c','#3a4b6c'];
+    basicColors.forEach(c=>{
+      const s=document.createElement('div');s.className='color-swatch';s.style.backgroundColor=c;
+      s.onclick=()=>{currentColor=c;isEraser=false;E('current-color').style.backgroundColor=c;updatePalette();};
+      E('palette').appendChild(s);
+    });
+    function updatePalette(){Array.from(E('palette').children).forEach(c=>c.style.backgroundColor===currentColor?c.classList.add('active'):c.classList.remove('active'));E('btn-eraser').classList.toggle('text-white',isEraser);}
+    E('btn-eraser').onclick=()=>{isEraser=true;E('current-color').style.backgroundColor='transparent';updatePalette();};
+    updatePalette();
+
+    E('btn-start').onclick=startGame;
+    E('btn-giveup').onclick=endGame;
+
+    function startGame(){
+      state='MEMORIZE';
+      currentSprite = sprites[Math.floor(Math.random()*sprites.length)];
+      userGrid=Array(size).fill().map(()=>Array(size).fill(null));
+      targetGrid=Array(size).fill().map(()=>Array(size).fill(null));
+      
+      E('overlay').classList.add('hidden');
+      E('btn-giveup').classList.remove('hidden');
+      E('score-display').classList.add('hidden');
+      E('target-canvas').classList.remove('hidden');
+      mainCtx.clearRect(0,0,size,size);
+      
+      // Draw Target
+      targetCtx.clearRect(0,0,size,size);
+      for(let y=0;y<size;y++){
+        for(let x=0;x<size;x++){
+          const idx=currentSprite.data[y][x];
+          if(idx>0){
+            const c=currentSprite.colors[idx-1];
+            targetGrid[y][x]=c;
+            targetCtx.fillStyle=c;
+            targetCtx.fillRect(x,y,1,1);
+          }
+        }
+      }
+      
+      timer=5; E('timer').textContent='05'; E('timer').classList.add('text-[#fbc531]','glitch');
+      interval=setInterval(()=>{
+        timer--; E('timer').textContent=timer.toString().padStart(2,'0');
+        if(timer<=0){ clearInterval(interval); startDrawPhase(); }
+      },1000);
+    }
+
+    function startDrawPhase(){
+      state='DRAW';
+      E('target-canvas').classList.add('hidden');
+      timer=60; E('timer').textContent='60'; E('timer').classList.remove('text-[#fbc531]','glitch');
+      interval=setInterval(()=>{
+        timer--; E('timer').textContent=timer.toString().padStart(2,'0');
+        if(timer<=10) E('timer').classList.add('text-[#e84118]','glitch');
+        if(timer<=0){ clearInterval(interval); endGame(); }
+      },1000);
+    }
+
+    function endGame(){
+      clearInterval(interval);
+      state='RESULT';
+      E('target-canvas').classList.remove('hidden'); // Show what it was
+      E('overlay').classList.remove('hidden');
+      E('btn-giveup').classList.add('hidden');
+      E('timer').classList.remove('text-[#e84118]','glitch');
+      
+      // Calculate Score
+      let correct=0, totalPaintable=0, erroneous=0;
+      for(let y=0;y<size;y++){
+        for(let x=0;x<size;x++){
+          if(targetGrid[y][x]){
+            totalPaintable++;
+            if(userGrid[y][x]===targetGrid[y][x]) correct++;
+          }else if(userGrid[y][x]){
+            erroneous++; // Drew where shouldn't have
+          }
+        }
+      }
+      const score = Math.max(0, Math.round((correct/(totalPaintable+erroneous))*100)) || 0;
+      
+      E('overlay-title').textContent = score>=90 ? 'PERFECT!' : score>=50 ? 'GOOD JOB' : 'TRY AGAIN';
+      E('overlay-desc').textContent = `You scored ${score}% accuracy.`;
+      E('score-display').textContent = `${score}%`;
+      E('score-display').classList.remove('hidden');
+      E('btn-start').textContent = 'Play Again';
+    }
+
+    // Drawing Logic
+    const canvas=E('main-canvas');
+    const draw=e=>{
+      if(state!=='DRAW')return;
+      const r=canvas.getBoundingClientRect();
+      const x=Math.floor((e.clientX-r.left)/(r.width/size));
+      const y=Math.floor((e.clientY-r.top)/(r.height/size));
+      if(x<0||x>=size||y<0||y>=size)return;
+      
+      if(isEraser){
+        userGrid[y][x]=null;
+        mainCtx.clearRect(x,y,1,1);
+      }else{
+        userGrid[y][x]=currentColor;
+        mainCtx.fillStyle=currentColor;
+        mainCtx.fillRect(x,y,1,1);
+      }
+    };
+    canvas.onmousedown=e=>{isDrawing=true;draw(e);};
+    window.onmouseup=()=>isDrawing=false;
+    canvas.onmousemove=e=>{if(isDrawing)draw(e);};
+  </script>
+</body>
+</html>

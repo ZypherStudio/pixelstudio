@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Asset Gallery</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  body{background:#121214;color:#e0e0e0;font-family:'Inter',sans-serif;overflow-x:hidden;}
+  .pixelated{image-rendering:pixelated;image-rendering:crisp-edges;}
+  #dropzone{border:2px dashed #2a2a32;background:rgba(30,30,36,0.5);transition:all 0.2s;}
+  #dropzone.dragover{border-color:#00a8ff;background:rgba(0,168,255,0.1);}
+  .gallery-item{background:#1e1e24;border:1px solid #2a2a32;border-radius:12px;overflow:hidden;transition:all 0.2s;position:relative;aspect-ratio:1;}
+  .gallery-item:hover{transform:scale(1.05);border-color:#00a8ff;box-shadow:0 10px 20px rgba(0,168,255,0.2);z-index:10;}
+  .checkered{background-color:#2a2a2a;background-image:linear-gradient(45deg,#1e1e1e 25%,transparent 25%,transparent 75%,#1e1e1e 75%,#1e1e1e),linear-gradient(45deg,#1e1e1e 25%,transparent 25%,transparent 75%,#1e1e1e 75%,#1e1e1e);background-size:16px 16px;background-position:0 0,8px 8px;}
+  .item-img{width:100%;height:100%;object-fit:contain;}
+  .item-name{position:absolute;bottom:0;left:0;width:100%;background:rgba(0,0,0,0.8);color:#fff;font-size:10px;padding:8px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .del-btn{position:absolute;top:5px;right:5px;background:rgba(232,65,24,0.9);color:white;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;cursor:pointer;opacity:0;transition:opacity 0.2s;}
+  .gallery-item:hover .del-btn{opacity:1;}
+</style>
+</head>
+<body class="min-h-screen flex flex-col">
+  <header class="h-16 bg-[#1e1e24] border-b border-[#2a2a32] flex items-center justify-between px-6 shrink-0 shadow-md z-30 sticky top-0">
+    <div class="flex items-center gap-4">
+      <a href="menu.html" class="w-8 h-8 rounded bg-[#121214] flex items-center justify-center text-gray-400 hover:text-white border border-[#2a2a32]"><i class="fa-solid fa-arrow-left"></i></a>
+      <h1 class="font-bold text-white uppercase tracking-wide flex items-center gap-2"><i class="fa-solid fa-images text-[#00a8ff]"></i> Asset Gallery</h1>
+    </div>
+    <div class="flex gap-4 items-center">
+      <input type="file" id="file-upload" multiple accept="image/png,image/gif,.pxl" class="hidden">
+      <button id="btn-upload" class="bg-[#00a8ff] hover:bg-[#0097e6] text-white px-6 py-2 rounded font-bold uppercase text-xs shadow-[0_0_15px_rgba(0,168,255,0.4)] transition-all flex items-center gap-2">
+        <i class="fa-solid fa-upload"></i> Upload Assets
+      </button>
+      <button id="btn-clear" class="bg-red-500/20 hover:bg-red-500/40 text-red-400 border border-red-500/50 px-4 py-2 rounded font-bold uppercase text-xs transition-colors"><i class="fa-solid fa-trash-can"></i> Clear</button>
+    </div>
+  </header>
+
+  <main class="flex-1 p-8 flex flex-col">
+    <!-- Dropzone -->
+    <div id="dropzone" class="w-full max-w-5xl mx-auto rounded-xl flex flex-col items-center justify-center p-12 mb-8 text-gray-500 cursor-pointer">
+      <i class="fa-solid fa-cloud-arrow-up text-5xl mb-4 text-[#00a8ff]"></i>
+      <h2 class="text-xl font-bold text-white mb-2">Drag & Drop Assets Here</h2>
+      <p class="text-sm">Supports .PNG, .GIF, and .PXL files</p>
+    </div>
+
+    <!-- Gallery Grid -->
+    <div id="gallery-grid" class="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-4 max-w-7xl mx-auto w-full">
+      <!-- Items -->
+    </div>
+  </main>
+
+  <script>
+    const E = id => document.getElementById(id);
+    const dropzone = E('dropzone');
+    const galleryGrid = E('gallery-grid');
+    const fileUpload = E('file-upload');
+    
+    // Load from localStorage if exists (only storing data URIs of images for now due to quota limits)
+    let assets = JSON.parse(localStorage.getItem('pixel_gallery') || '[]');
+    
+    function saveAssets() {
+      try {
+        localStorage.setItem('pixel_gallery', JSON.stringify(assets));
+      } catch(e) {
+        console.warn('Storage quota exceeded, could not save all assets.');
+        alert('Storage limit reached! Some assets might not be saved permanently.');
+      }
+    }
+
+    function renderGallery() {
+      galleryGrid.innerHTML = '';
+      if(assets.length === 0) {
+        galleryGrid.innerHTML = '<div class="col-span-full text-center text-gray-600 mt-10 italic">Gallery is empty. Upload some sprites!</div>';
+        return;
+      }
+      
+      assets.forEach((asset, index) => {
+        const div = document.createElement('div');
+        div.className = 'gallery-item checkered';
+        
+        const img = document.createElement('img');
+        img.className = 'item-img pixelated';
+        img.src = asset.data;
+        
+        const name = document.createElement('div');
+        name.className = 'item-name';
+        name.textContent = asset.name;
+        
+        const delBtn = document.createElement('div');
+        delBtn.className = 'del-btn';
+        delBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+        delBtn.onclick = (e) => {
+          e.stopPropagation();
+          assets.splice(index, 1);
+          saveAssets();
+          renderGallery();
+        };
+        
+        div.appendChild(img);
+        div.appendChild(name);
+        div.appendChild(delBtn);
+        galleryGrid.appendChild(div);
+      });
+    }
+
+    function handleFiles(files) {
+      Array.from(files).forEach(file => {
+        if (!file.type.startsWith('image/') && !file.name.endsWith('.pxl')) return;
+        
+        const reader = new FileReader();
+        reader.onload = e => {
+          // If it's a PXL file, we would theoretically parse it and render to canvas, then save as data URI.
+          // For now, we will handle PNG/GIF natively. PXL handling can be added by integrating index.html's render logic.
+          if(file.name.endsWith('.pxl')){
+             alert('.PXL file viewer coming soon! For now, please export as PNG/GIF from the Studio.');
+             return;
+          }
+          
+          assets.push({
+            id: Date.now() + Math.random(),
+            name: file.name,
+            data: e.target.result
+          });
+          saveAssets();
+          renderGallery();
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    E('btn-upload').onclick = () => fileUpload.click();
+    fileUpload.onchange = e => handleFiles(e.target.files);
+    E('btn-clear').onclick = () => { if(confirm('Clear entire gallery?')){ assets=[]; saveAssets(); renderGallery(); } };
+
+    // Drag & Drop
+    dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('dragover'); });
+    dropzone.addEventListener('dragleave', e => { e.preventDefault(); dropzone.classList.remove('dragover'); });
+    dropzone.addEventListener('drop', e => {
+      e.preventDefault();
+      dropzone.classList.remove('dragover');
+      handleFiles(e.dataTransfer.files);
+    });
+
+    renderGallery();
+  </script>
+</body>
+</html>

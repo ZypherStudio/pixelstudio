@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PixelStudio Hub</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{min-height:100vh;background:#0d0d0f;color:#e0e0e0;font-family:'Inter',sans-serif;display:flex;align-items:center;justify-content:center;position:relative;overflow-x:hidden;}
+  body::before{content:'';position:absolute;inset:0;background-image:radial-gradient(rgba(90,107,140,0.15) 1px,transparent 1px);background-size:28px 28px;z-index:0;position:fixed;}
+  .container{position:relative;z-index:1;text-align:center;width:100%;max-width:1400px;padding:3rem 2rem;}
+  .logo{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:10px;}
+  .logo-icon{width:56px;height:56px;border-radius:14px;background:linear-gradient(135deg,#5a6b8c,#3a4b6c);display:flex;align-items:center;justify-content:center;font-size:24px;color:#fff;}
+  .logo-text{font-size:2.2rem;font-weight:900;color:#fff;letter-spacing:-1px;}
+  .tagline{color:#888;margin-bottom:3rem;}
+  
+  .cards{display:grid;grid-template-columns:repeat(5,1fr);gap:20px;}
+  
+  .card{background:rgba(30,30,36,0.8);border:1px solid rgba(42,42,50,0.8);border-radius:20px;padding:25px 20px;text-align:left;text-decoration:none;color:inherit;transition:transform 0.3s, border-color 0.3s, box-shadow 0.3s;display:block;position:relative;overflow:hidden;backdrop-filter:blur(5px);}
+  .card:hover{transform:translateY(-8px);border-color:var(--hover-color, #5a6b8c);box-shadow:0 10px 30px rgba(0,0,0,0.5);}
+  .card-icon{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:15px;background:var(--icon-bg, #3a4b6c);color:#fff;}
+  .card h2{font-size:1.1rem;font-weight:700;color:#fff;margin-bottom:8px;}
+  .card p{font-size:0.75rem;color:#888;margin-bottom:20px;line-height:1.5;height:45px;}
+  .card-cta{display:inline-block;padding:8px 14px;background:var(--icon-bg, #3a4b6c);color:#fff;border-radius:8px;font-size:0.75rem;font-weight:700;}
+  
+  /* Original Theming */
+  .c-studio{--hover-color:#5a6b8c; --icon-bg:linear-gradient(135deg,#5a6b8c,#3a4b6c);}
+  .c-colorbook{--hover-color:#38b764; --icon-bg:linear-gradient(135deg,#38b764,#1a5a33);}
+  .c-battle{--hover-color:#e84118; --icon-bg:linear-gradient(135deg,#e84118,#c23616);}
+  .c-sandbox{--hover-color:#fbc531; --icon-bg:linear-gradient(135deg,#fbc531,#e1b12c);}
+  .c-generator{--hover-color:#9c88ff; --icon-bg:linear-gradient(135deg,#9c88ff,#8c7ae6);}
+  .c-gallery{--hover-color:#00a8ff; --icon-bg:linear-gradient(135deg,#00a8ff,#0097e6);}
+  
+  /* New Phase 3 Theming */
+  .c-iso{--hover-color:#e056fd; --icon-bg:linear-gradient(135deg,#e056fd,#be2edd);}
+  .c-chiptune{--hover-color:#ff7979; --icon-bg:linear-gradient(135deg,#ff7979,#eb4d4b);}
+  .c-filter{--hover-color:#badc58; --icon-bg:linear-gradient(135deg,#badc58,#6ab04c);}
+  .c-tester{--hover-color:#7ed6df; --icon-bg:linear-gradient(135deg,#7ed6df,#22a6b3);}
+  
+  @media(max-width:1200px){.cards{grid-template-columns:repeat(4,1fr);}}
+  @media(max-width:900px){.cards{grid-template-columns:repeat(3,1fr);}}
+  @media(max-width:700px){.cards{grid-template-columns:repeat(2,1fr);}}
+  @media(max-width:500px){.cards{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">
+      <div class="logo-icon"><i class="fa-solid fa-layer-group"></i></div>
+      <div class="logo-text">PixelStudio HUB</div>
+    </div>
+    <p class="tagline">The Ultimate Pixel Art Ecosystem</p>
+    
+    <div class="cards">
+      <!-- 1. Studio -->
+      <a class="card c-studio" href="index.html">
+        <div class="card-icon"><i class="fa-solid fa-pen-nib"></i></div>
+        <h2>Pixel Studio Pro</h2>
+        <p>Full-featured pixel art & animation editor. Create your own sprites.</p>
+        <div class="card-cta">Open Studio &rarr;</div>
+      </a>
+      
+      <!-- 2. Iso-Studio (NEW) -->
+      <a class="card c-iso" href="iso.html">
+        <div class="card-icon"><i class="fa-solid fa-cubes"></i></div>
+        <h2>Iso-Studio</h2>
+        <p>2.5D Isometric design engine. Build rooms, cities, and dioramas.</p>
+        <div class="card-cta">Build Isometric &rarr;</div>
+      </a>
+
+      <!-- 3. Chiptune Maker (NEW) -->
+      <a class="card c-chiptune" href="chiptune.html">
+        <div class="card-icon"><i class="fa-solid fa-music"></i></div>
+        <h2>8-Bit Chiptune</h2>
+        <p>Create retro sound effects and simple 8-bit melodies using the synth.</p>
+        <div class="card-cta">Make Noise &rarr;</div>
+      </a>
+      
+      <!-- 4. Retro Filter (NEW) -->
+      <a class="card c-filter" href="filter.html">
+        <div class="card-icon"><i class="fa-solid fa-camera-retro"></i></div>
+        <h2>Retro Filter Lab</h2>
+        <p>Apply Gameboy, CRT, and Dither filters to your photos instantly.</p>
+        <div class="card-cta">Apply Filters &rarr;</div>
+      </a>
+      
+      <!-- 5. Sprite Tester (NEW) -->
+      <a class="card c-tester" href="tester.html">
+        <div class="card-icon"><i class="fa-solid fa-person-running"></i></div>
+        <h2>Sprite Tester</h2>
+        <p>Upload a sprite sheet and test its animation frames in real-time.</p>
+        <div class="card-cta">Test Animation &rarr;</div>
+      </a>
+
+      <!-- 6. Color Book -->
+      <a class="card c-colorbook" href="colorbook.html">
+        <div class="card-icon"><i class="fa-solid fa-fill-drip"></i></div>
+        <h2>Color Book</h2>
+        <p>Upload images, convert to outlines, and color them in.</p>
+        <div class="card-cta">Play Mode &rarr;</div>
+      </a>
+      
+      <!-- 7. Battle -->
+      <a class="card c-battle" href="battle.html">
+        <div class="card-icon"><i class="fa-solid fa-khanda"></i></div>
+        <h2>Pixel Battle</h2>
+        <p>Time Attack! Memorize a sprite and redraw it in 60 seconds.</p>
+        <div class="card-cta">Challenge &rarr;</div>
+      </a>
+      
+      <!-- 8. Sandbox -->
+      <a class="card c-sandbox" href="sandbox.html">
+        <div class="card-icon"><i class="fa-solid fa-flask"></i></div>
+        <h2>Pixel Sandbox</h2>
+        <p>Physics engine. Draw with falling sand, water, fire, and stone.</p>
+        <div class="card-cta">Play Physics &rarr;</div>
+      </a>
+      
+      <!-- 9. Generator -->
+      <a class="card c-generator" href="generator.html">
+        <div class="card-icon"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+        <h2>Sprite Generator</h2>
+        <p>Procedural AI algorithm that creates infinite unique sprite variations.</p>
+        <div class="card-cta">Generate &rarr;</div>
+      </a>
+      
+      <!-- 10. Gallery -->
+      <a class="card c-gallery" href="gallery.html">
+        <div class="card-icon"><i class="fa-solid fa-images"></i></div>
+        <h2>Asset Gallery</h2>
+        <p>Load and organize your saved .pxl files and animations.</p>
+        <div class="card-cta">View Gallery &rarr;</div>
+      </a>
+    </div>
+  </div>
+</body>
+</html>

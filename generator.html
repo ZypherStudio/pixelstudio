@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Procedural Sprite Generator</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  body{background:#121214;color:#e0e0e0;font-family:'Inter',sans-serif;overflow:hidden;}
+  .pixelated{image-rendering:pixelated;image-rendering:crisp-edges;}
+  .sprite-card{background:#1e1e24;border:1px solid #2a2a32;border-radius:12px;padding:16px;transition:all 0.2s;cursor:pointer;display:flex;flex-direction:column;align-items:center;position:relative;overflow:hidden;}
+  .sprite-card:hover{transform:translateY(-5px);border-color:#9c88ff;box-shadow:0 10px 20px rgba(0,0,0,0.5);}
+  .sprite-card canvas{width:100%;aspect-ratio:1;background:rgba(0,0,0,0.2);border-radius:8px;}
+  .dl-btn{position:absolute;bottom:-40px;left:0;width:100%;background:#9c88ff;color:#fff;text-align:center;padding:8px;font-size:12px;font-weight:bold;transition:bottom 0.2s;}
+  .sprite-card:hover .dl-btn{bottom:0;}
+</style>
+</head>
+<body class="h-screen w-screen flex flex-col">
+  <header class="h-16 bg-[#1e1e24] border-b border-[#2a2a32] flex items-center justify-between px-6 shrink-0 shadow-md z-30">
+    <div class="flex items-center gap-4">
+      <a href="menu.html" class="w-8 h-8 rounded bg-[#121214] flex items-center justify-center text-gray-400 hover:text-white border border-[#2a2a32]"><i class="fa-solid fa-arrow-left"></i></a>
+      <h1 class="font-bold text-white uppercase tracking-wide flex items-center gap-2"><i class="fa-solid fa-wand-magic-sparkles text-[#9c88ff]"></i> Sprite Generator</h1>
+    </div>
+    <div class="flex gap-4 items-center">
+      <select id="sel-type" class="bg-[#121214] border border-[#2a2a32] text-sm px-3 py-2 rounded text-white outline-none">
+        <option value="spaceship">Spaceship</option>
+        <option value="character">Character</option>
+        <option value="sword">Sword</option>
+      </select>
+      <button id="btn-generate" class="bg-[#9c88ff] hover:bg-[#8c7ae6] text-white px-6 py-2 rounded font-bold uppercase text-xs shadow-[0_0_15px_rgba(156,136,255,0.4)] transition-all flex items-center gap-2">
+        <i class="fa-solid fa-bolt"></i> Generate Variants
+      </button>
+    </div>
+  </header>
+
+  <main class="flex-1 overflow-y-auto p-8">
+    <div id="grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6 max-w-7xl mx-auto">
+      <!-- Generated sprites will appear here -->
+    </div>
+  </main>
+
+  <script>
+    const E=id=>document.getElementById(id);
+    const size = 16;
+    
+    function generatePalette() {
+      // Generate a random HSL color, then create Dark (outline), Base, and Highlight
+      const h = Math.floor(Math.random() * 360);
+      const s = 60 + Math.random() * 40; // 60-100
+      const l = 40 + Math.random() * 20; // 40-60
+      
+      return {
+        outline: `hsl(${h}, ${s}%, 15%)`, // Very dark
+        base: `hsl(${h}, ${s}%, ${l}%)`,   // Mid
+        highlight: `hsl(${h}, ${s-20}%, ${l+25}%)` // Bright
+      };
+    }
+
+    function createEmptyGrid(w, h) { return Array(h).fill().map(()=>Array(w).fill(0)); }
+
+    function generateSprite(type) {
+      const w = size/2; // 8
+      const h = size;   // 16
+      let grid = createEmptyGrid(w, h);
+      
+      // Seed random noise based on type
+      let density = 0.5;
+      if (type === 'spaceship') density = 0.4;
+      if (type === 'character') density = 0.5;
+      if (type === 'sword') density = 0.3;
+
+      for(let y=0; y<h; y++){
+        for(let x=0; x<w; x++){
+          // Specific masking per type
+          let mask = 1;
+          if(type === 'spaceship' && (y<2 || y>13 || x<2)) mask = (Math.random()>0.8)?1:0; // Shape bias
+          if(type === 'character' && (y<3 || x>5)) mask = (Math.random()>0.7)?1:0;
+          if(type === 'sword') {
+            if(x>2) mask = 0; // Blade is thin
+            if(y>11 && x>0) mask = 1; // Hilt
+          }
+          
+          if(Math.random() < density && mask) grid[y][x] = 1;
+        }
+      }
+
+      // Cellular Automata Smoothing (1-2 passes)
+      for(let pass=0; pass<2; pass++){
+        let next = createEmptyGrid(w, h);
+        for(let y=0; y<h; y++){
+          for(let x=0; x<w; x++){
+            let neighbors = 0;
+            for(let dy=-1; dy<=1; dy++){
+              for(let dx=-1; dx<=1; dx++){
+                if(dx===0 && dy===0) continue;
+                let nx=x+dx, ny=y+dy;
+                if(nx<0) nx=Math.abs(nx)-1; // Mirror reflection on center line
+                if(nx>=w || ny<0 || ny>=h) continue;
+                if(grid[ny][nx]>0) neighbors++;
+              }
+            }
+            if(grid[y][x]>0) {
+              next[y][x] = (neighbors >= 2) ? 1 : 0;
+            } else {
+              next[y][x] = (neighbors >= 3) ? 1 : 0;
+            }
+          }
+        }
+        grid = next;
+      }
+
+      // Add Outlines (2) and Highlights (3)
+      // Mirror to full 16x16 grid
+      let full = createEmptyGrid(size, size);
+      for(let y=0; y<size; y++){
+        for(let x=0; x<w; x++){
+          if(grid[y][x]===1){
+            full[y][w-1-x] = 1; // Left side (mirrored)
+            full[y][w+x] = 1;   // Right side
+          }
+        }
+      }
+
+      // Assign Outlines
+      for(let y=0; y<size; y++){
+        for(let x=0; x<size; x++){
+          if(full[y][x]===1){
+            // Check if touches empty space
+            let isEdge = false;
+            for(let dy=-1; dy<=1; dy++){
+              for(let dx=-1; dx<=1; dx++){
+                if(dx===0&&dy===0)continue;
+                if(x+dx<0||x+dx>=size||y+dy<0||y+dy>=size || full[y+dy][x+dx]===0){
+                  isEdge = true;
+                }
+              }
+            }
+            if(isEdge) full[y][x] = 2; // Outline
+            else {
+              // Highlight based on light source (top-left)
+              if(x>0 && y>0 && full[y-1][x-1]===2) full[y][x] = 3; // Highlight
+            }
+          }
+        }
+      }
+
+      return full;
+    }
+
+    function renderSprite(data, palette) {
+      const c = document.createElement('canvas');
+      c.width = size; c.height = size;
+      c.className = 'pixelated';
+      const ctx = c.getContext('2d');
+      ctx.clearRect(0,0,size,size);
+      
+      for(let y=0; y<size; y++){
+        for(let x=0; x<size; x++){
+          const val = data[y][x];
+          if(val===0) continue;
+          if(val===1) ctx.fillStyle = palette.base;
+          if(val===2) ctx.fillStyle = palette.outline;
+          if(val===3) ctx.fillStyle = palette.highlight;
+          ctx.fillRect(x,y,1,1);
+        }
+      }
+      return c;
+    }
+
+    function populateGrid() {
+      const gridEl = E('grid');
+      gridEl.innerHTML = '';
+      const type = E('sel-type').value;
+      
+      for(let i=0; i<18; i++){
+        const data = generateSprite(type);
+        const pal = generatePalette();
+        const canvas = renderSprite(data, pal);
+        
+        const card = document.createElement('div');
+        card.className = 'sprite-card';
+        card.appendChild(canvas);
+        
+        const btn = document.createElement('div');
+        btn.className = 'dl-btn';
+        btn.innerHTML = '<i class="fa-solid fa-download"></i> PNG';
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          const scale = 16; // Export 256x256
+          const exp = document.createElement('canvas');
+          exp.width = size*scale; exp.height = size*scale;
+          const eCtx = exp.getContext('2d');
+          eCtx.imageSmoothingEnabled = false;
+          for(let y=0;y<size;y++){
+            for(let x=0;x<size;x++){
+              const v=data[y][x];
+              if(v>0){
+                if(v===1) eCtx.fillStyle=pal.base;
+                if(v===2) eCtx.fillStyle=pal.outline;
+                if(v===3) eCtx.fillStyle=pal.highlight;
+                eCtx.fillRect(x*scale, y*scale, scale, scale);
+              }
+            }
+          }
+          const a = document.createElement('a');
+          a.download = `${type}_gen_${Date.now()}.png`;
+          a.href = exp.toDataURL();
+          a.click();
+        };
+        
+        card.appendChild(btn);
+        gridEl.appendChild(card);
+      }
+    }
+
+    E('btn-generate').onclick = populateGrid;
+    
+    // Initial generation
+    populateGrid();
+  </script>
+</body>
+</html>

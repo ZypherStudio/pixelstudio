@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pixel Sandbox</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  body{background:#121214;color:#e0e0e0;font-family:'Inter',sans-serif;overflow:hidden;user-select:none;}
+  .pixelated{image-rendering:pixelated;image-rendering:crisp-edges;}
+  .checkered{background-color:#2a2a2a;background-image:linear-gradient(45deg,#1e1e1e 25%,transparent 25%,transparent 75%,#1e1e1e 75%,#1e1e1e),linear-gradient(45deg,#1e1e1e 25%,transparent 25%,transparent 75%,#1e1e1e 75%,#1e1e1e);background-size:16px 16px;background-position:0 0,8px 8px;}
+  .mat-btn{transition:all 0.1s;}
+  .mat-btn.active{transform:scale(1.05);box-shadow:0 0 0 2px #fff;}
+</style>
+</head>
+<body class="h-screen w-screen flex flex-col">
+  <header class="h-16 bg-[#1e1e24] border-b border-[#2a2a32] flex items-center justify-between px-6 shrink-0 shadow-md">
+    <div class="flex items-center gap-4">
+      <a href="menu.html" class="w-8 h-8 rounded bg-[#121214] flex items-center justify-center text-gray-400 hover:text-white border border-[#2a2a32]"><i class="fa-solid fa-arrow-left"></i></a>
+      <h1 class="font-bold text-white uppercase tracking-wide flex items-center gap-2"><i class="fa-solid fa-flask text-[#fbc531]"></i> Pixel Sandbox</h1>
+    </div>
+    <div class="flex items-center gap-3">
+      <button id="btn-clear" class="bg-red-500/20 hover:bg-red-500/40 text-red-400 border border-red-500/50 px-4 py-2 rounded font-bold uppercase text-xs transition-colors"><i class="fa-solid fa-trash-can"></i> Clear All</button>
+    </div>
+  </header>
+
+  <main class="flex-1 flex overflow-hidden">
+    <section class="flex-1 flex flex-col items-center justify-center p-8">
+      <div class="checkered shadow-2xl border border-[#2a2a32] rounded-lg overflow-hidden bg-white relative" style="width:576px;height:576px;">
+        <canvas id="main-canvas" width="96" height="96" class="absolute inset-0 w-full h-full pixelated cursor-crosshair z-0"></canvas>
+      </div>
+    </section>
+
+    <!-- Sidebar Tools -->
+    <aside class="w-48 bg-[#1e1e24] border-l border-[#2a2a32] flex flex-col z-20 shadow-xl p-4">
+      <h2 class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-4">Materials</h2>
+      <div class="flex flex-col gap-3">
+        <!-- Sand -->
+        <button class="mat-btn active flex items-center gap-3 bg-[#121214] border border-[#2a2a32] p-2 rounded-lg" data-mat="1">
+          <div class="w-6 h-6 rounded bg-[#f1c40f]"></div><span class="text-xs font-bold text-gray-300">Sand</span>
+        </button>
+        <!-- Water -->
+        <button class="mat-btn flex items-center gap-3 bg-[#121214] border border-[#2a2a32] p-2 rounded-lg" data-mat="2">
+          <div class="w-6 h-6 rounded bg-[#3498db]"></div><span class="text-xs font-bold text-gray-300">Water</span>
+        </button>
+        <!-- Stone -->
+        <button class="mat-btn flex items-center gap-3 bg-[#121214] border border-[#2a2a32] p-2 rounded-lg" data-mat="3">
+          <div class="w-6 h-6 rounded bg-[#7f8c8d]"></div><span class="text-xs font-bold text-gray-300">Stone</span>
+        </button>
+        <!-- Wood -->
+        <button class="mat-btn flex items-center gap-3 bg-[#121214] border border-[#2a2a32] p-2 rounded-lg" data-mat="4">
+          <div class="w-6 h-6 rounded bg-[#d35400]"></div><span class="text-xs font-bold text-gray-300">Wood</span>
+        </button>
+        <!-- Fire -->
+        <button class="mat-btn flex items-center gap-3 bg-[#121214] border border-[#2a2a32] p-2 rounded-lg" data-mat="5">
+          <div class="w-6 h-6 rounded bg-[#e74c3c]"></div><span class="text-xs font-bold text-gray-300">Fire</span>
+        </button>
+        <!-- Eraser -->
+        <button class="mat-btn flex items-center gap-3 bg-[#121214] border border-[#2a2a32] p-2 rounded-lg" data-mat="0">
+          <div class="w-6 h-6 rounded bg-transparent border border-dashed border-gray-500 flex items-center justify-center text-gray-500"><i class="fa-solid fa-eraser"></i></div><span class="text-xs font-bold text-gray-300">Eraser</span>
+        </button>
+      </div>
+
+      <h2 class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-8 mb-4">Brush Size</h2>
+      <input type="range" id="brush-size" min="1" max="5" value="2" class="w-full accent-[#fbc531]">
+    </aside>
+  </main>
+
+  <script>
+    const E=id=>document.getElementById(id), C=id=>E(id).getContext('2d',{willReadFrequently:true});
+    const ctx=C('main-canvas'), canvas=E('main-canvas');
+    const W=96, H=96;
+    let grid = new Uint8Array(W*H);
+    let nextGrid = new Uint8Array(W*H);
+    let colorGrid = new Uint32Array(W*H);
+    
+    // Config
+    let currentMat = 1;
+    let brushSize = 2;
+    let isDrawing = false;
+    let mouseX=0, mouseY=0;
+
+    // Palette (ABGR format for Uint32Array ImageData)
+    // 0: Empty, 1: Sand, 2: Water, 3: Stone, 4: Wood, 5: Fire
+    const colors = [
+      0x00000000, // Empty
+      [0xFF0FC4F1, 0xFF129CF3], // Sand (ABGR) -> #f1c40f -> BGR: 0x0fc4f1
+      [0xFFDB9834, 0xFFB98029], // Water
+      [0xFF8D8C7F, 0xFFA6A595], // Stone
+      [0xFF0054D3, 0xFF227EE6], // Wood
+      [0xFF3C4CE7, 0xFF2B39C0, 0xFF0FC4F1]  // Fire
+    ];
+
+    function getColor(mat) {
+      if(mat===0) return 0x00000000;
+      const arr = colors[mat];
+      return arr[Math.floor(Math.random()*arr.length)];
+    }
+
+    // UI Listeners
+    document.querySelectorAll('.mat-btn').forEach(b=>{
+      b.onclick=e=>{
+        document.querySelectorAll('.mat-btn').forEach(x=>x.classList.remove('active'));
+        e.currentTarget.classList.add('active');
+        currentMat = parseInt(e.currentTarget.dataset.mat);
+      };
+    });
+    E('brush-size').onchange=e=>brushSize=parseInt(e.target.value);
+    E('btn-clear').onclick=()=>{ grid.fill(0); colorGrid.fill(0); };
+
+    // Drawing
+    function drawInput() {
+      if(!isDrawing) return;
+      const r=canvas.getBoundingClientRect();
+      const x=Math.floor((mouseX-r.left)/(r.width/W));
+      const y=Math.floor((mouseY-r.top)/(r.height/H));
+      
+      const rad = brushSize-1;
+      for(let dy=-rad; dy<=rad; dy++){
+        for(let dx=-rad; dx<=rad; dx++){
+          const nx=x+dx, ny=y+dy;
+          if(nx>=0&&nx<W&&ny>=0&&ny<H){
+            // Add some randomness for liquids/powders
+            if(currentMat===0 || currentMat===3 || currentMat===4 || Math.random()>0.2){
+              const idx = ny*W + nx;
+              grid[idx] = currentMat;
+              colorGrid[idx] = getColor(currentMat);
+            }
+          }
+        }
+      }
+    }
+
+    canvas.onmousedown=e=>{isDrawing=true; mouseX=e.clientX; mouseY=e.clientY;};
+    window.onmouseup=()=>isDrawing=false;
+    window.onmousemove=e=>{mouseX=e.clientX; mouseY=e.clientY;};
+
+    // Physics Engine
+    function updatePhysics() {
+      drawInput();
+      nextGrid.set(grid); // copy current to next
+      
+      // Update logic: Bottom to top
+      for(let y=H-1; y>=0; y--){
+        // Randomize horizontal sweep direction to avoid bias
+        const dir = Math.random()>0.5 ? 1 : -1;
+        const startX = dir===1 ? 0 : W-1;
+        const endX = dir===1 ? W : -1;
+
+        for(let x=startX; x!==endX; x+=dir){
+          const i = y*W + x;
+          const mat = grid[i];
+          if(mat===0 || mat===3 || mat===4) continue; // static
+
+          // Helper to check and swap
+          const isEmpty = (nx, ny) => nx>=0 && nx<W && ny>=0 && ny<H && nextGrid[ny*W+nx] === 0;
+          const isWater = (nx, ny) => nx>=0 && nx<W && ny>=0 && ny<H && nextGrid[ny*W+nx] === 2;
+          const isWood = (nx, ny) => nx>=0 && nx<W && ny>=0 && ny<H && nextGrid[ny*W+nx] === 4;
+          const swap = (nx, ny) => {
+            const ni = ny*W+nx;
+            nextGrid[ni] = mat; nextGrid[i] = grid[ni]; // Swap mat
+            const tC = colorGrid[i]; colorGrid[i] = colorGrid[ni]; colorGrid[ni] = tC; // Swap color
+          };
+          const setEmpty = (i2) => { nextGrid[i2]=0; colorGrid[i2]=0; };
+
+          if(mat===1) { // Sand
+            if(isEmpty(x, y+1)) { swap(x, y+1); }
+            else if(isWater(x, y+1)) { swap(x, y+1); } // sinks in water
+            else if(isEmpty(x-1, y+1) && isEmpty(x+1, y+1)) { swap(x+(Math.random()>0.5?1:-1), y+1); }
+            else if(isEmpty(x-1, y+1)) { swap(x-1, y+1); }
+            else if(isEmpty(x+1, y+1)) { swap(x+1, y+1); }
+          }
+          else if(mat===2) { // Water
+            if(isEmpty(x, y+1)) { swap(x, y+1); }
+            else if(isEmpty(x-1, y+1) && isEmpty(x+1, y+1)) { swap(x+(Math.random()>0.5?1:-1), y+1); }
+            else if(isEmpty(x-1, y+1)) { swap(x-1, y+1); }
+            else if(isEmpty(x+1, y+1)) { swap(x+1, y+1); }
+            else if(isEmpty(x-1, y) && isEmpty(x+1, y)) { swap(x+(Math.random()>0.5?1:-1), y); }
+            else if(isEmpty(x-1, y)) { swap(x-1, y); }
+            else if(isEmpty(x+1, y)) { swap(x+1, y); }
+          }
+          else if(mat===5) { // Fire
+            // Chance to die
+            if(Math.random() < 0.1) { setEmpty(i); continue; }
+            
+            // Rise up
+            if(isEmpty(x, y-1)) { swap(x, y-1); }
+            else if(isEmpty(x-1, y-1) && isEmpty(x+1, y-1)) { swap(x+(Math.random()>0.5?1:-1), y-1); }
+            
+            // Burn wood around it
+            const neighbors = [[x,y-1],[x,y+1],[x-1,y],[x+1,y]];
+            for(let [nx, ny] of neighbors){
+              if(isWood(nx,ny)){
+                if(Math.random() < 0.05) { // Catch fire
+                  const ni = ny*W+nx;
+                  nextGrid[ni] = 5; colorGrid[ni] = getColor(5);
+                }
+              } else if(isWater(nx,ny)){
+                if(Math.random() < 0.2) { // Extinguish
+                  setEmpty(i); setEmpty(ny*W+nx);
+                }
+              }
+            }
+          }
+        }
+      }
+      grid.set(nextGrid);
+    }
+
+    // Render Loop
+    const imgData = ctx.createImageData(W, H);
+    const buf = new Uint32Array(imgData.data.buffer);
+    
+    function loop() {
+      updatePhysics();
+      // Draw grid to canvas
+      buf.set(colorGrid);
+      ctx.putImageData(imgData, 0, 0);
+      requestAnimationFrame(loop);
+    }
+    
+    loop(); // Start
+  </script>
+</body>
+</html>
