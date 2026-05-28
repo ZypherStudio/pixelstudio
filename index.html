@@ -375,7 +375,46 @@
             </div>
         </div>
 
+        <!-- Welcome/Splash Modal -->
+        <div id="welcome-modal" class="fixed inset-0 bg-black/90 z-[200] flex items-center justify-center backdrop-blur-sm">
+            <div class="bg-panel border border-border rounded-xl shadow-2xl w-[800px] h-[500px] flex overflow-hidden flex-col">
+                <!-- Header -->
+                <div class="p-6 pb-2 border-b border-border flex items-center justify-center bg-[#18181d]">
+                    <img src="zypher_logo.png" class="h-12" alt="Zypher Studio Logo" />
+                </div>
+                <!-- Content -->
+                <div class="flex flex-1 h-full">
+                    <!-- Left: New File -->
+                    <div class="flex-1 p-8 flex flex-col items-center justify-center border-r border-border bg-[#18181d]/50">
+                        <h2 class="text-white text-xl font-bold mb-6 tracking-wider uppercase">Start New Project</h2>
+                        <div class="flex flex-col gap-4 w-full px-8">
+                            <button id="btn-new-drawing" class="group flex flex-col items-center gap-2 p-6 rounded-lg bg-base border-2 border-transparent hover:border-accent hover:bg-[#2a2a32] transition-all shadow-md">
+                                <i class="fa-solid fa-paintbrush text-4xl text-gray-400 group-hover:text-accent transition-colors"></i>
+                                <span class="text-white font-bold tracking-wide">Drawing Mode</span>
+                                <span class="text-[10px] text-gray-500 text-center">Single frame canvas for illustrations and sprites.</span>
+                            </button>
+                            <button id="btn-new-animation" class="group flex flex-col items-center gap-2 p-6 rounded-lg bg-base border-2 border-transparent hover:border-accent hover:bg-[#2a2a32] transition-all shadow-md">
+                                <i class="fa-solid fa-film text-4xl text-gray-400 group-hover:text-accent transition-colors"></i>
+                                <span class="text-white font-bold tracking-wide">Animation Mode</span>
+                                <span class="text-[10px] text-gray-500 text-center">Timeline-based workspace for sprite animations.</span>
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Right: Recent Files -->
+                    <div class="flex-1 flex flex-col bg-panel">
+                        <div class="p-4 border-b border-border bg-[#18181d]">
+                            <h2 class="text-sm font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2"><i class="fa-solid fa-clock-rotate-left"></i> Recent Projects</h2>
+                        </div>
+                        <div id="welcome-recent-list" class="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     <script>
+        let appMode = 'drawing';
         const MAX_UNDO = 30; let gridSize = 32, currentColor = '#b13e53', currentColorSec = '#000000', currentTool = 'pen'; 
         let colorHistory = ['#1a1c2c', '#b13e53', '#ffffff', '#000000'];
         let isDrawing = false, lastPos = null, useSecondary = false;
@@ -394,7 +433,22 @@
         const workspace = E('workspace'), canvasWrapper = E('canvas-wrapper'), canvasContainer = E('canvas-container'), previewCanvas = E('preview-canvas'), previewCtx = previewCanvas.getContext('2d');
         let paletteGrid, toolButtons;
 
-        function init() { paletteGrid = E('palette-grid'); toolButtons = document.querySelectorAll('[data-tool]'); initPalette(); setColor(currentColor); E('color-picker-sec').value = currentColorSec; updateColorHistoryUI(); initGridSize(32); setupEvents(); loadProjectsList(); autoSaveInterval = setInterval(autoSaveProject, 30000); }
+        function init() { 
+            paletteGrid = E('palette-grid'); toolButtons = document.querySelectorAll('[data-tool]'); 
+            initPalette(); setColor(currentColor); E('color-picker-sec').value = currentColorSec; updateColorHistoryUI(); 
+            initGridSize(32); setupEvents(); 
+            loadWelcomeRecentProjects(); 
+            autoSaveInterval = setInterval(autoSaveProject, 30000); 
+        }
+        function setAppMode(mode) {
+            appMode = mode;
+            const timelineFooter = document.querySelector('footer');
+            if (mode === 'drawing') {
+                timelineFooter.classList.add('hidden');
+            } else {
+                timelineFooter.classList.remove('hidden');
+            }
+        }
         function createEmptyGrid() { return Array(gridSize).fill(null).map(() => Array(gridSize).fill(null)); }
         function initData() { frames = [{ id: Date.now().toString(), layers: [{ id: Date.now().toString()+'l', name: 'Layer 1', visible: true, opacity: 1, blendMode: 'normal', grid: createEmptyGrid() }] }]; currentFrameIndex = 0; currentLayerIndex = 0; undoStack = []; commitAndClearSelection(); shapePreview = null; }
         function initGridSize(size) { gridSize = size; document.querySelectorAll('[data-size]').forEach(b => b.className = parseInt(b.dataset.size) === size ? 'px-3 py-1.5 rounded-sm text-xs font-semibold bg-accent text-white shadow transition-all' : 'px-3 py-1.5 rounded-sm text-xs font-semibold text-gray-400 hover:text-white hover:bg-[#2a2a32] transition-colors'); initData(); initDOMGrid(); renderTimeline(); renderLayersPanel(); renderMainGrid(); updateSymmetryUI(); }
@@ -622,30 +676,6 @@
             });
         }
 
-        // Projects Manager
-        function loadProjectsList() {
-            const list = E('projects-list'); list.innerHTML = '';
-            let keys = Object.keys(localStorage).filter(k=>k.startsWith('pxl_proj_'));
-            if(keys.length===0) { list.innerHTML = '<div class="col-span-4 text-center text-gray-500 py-10">No saved projects yet.</div>'; return; }
-            keys.sort((a,b)=>JSON.parse(localStorage.getItem(b)).time - JSON.parse(localStorage.getItem(a)).time).forEach(k => {
-                try {
-                    const p = JSON.parse(localStorage.getItem(k));
-                    const div = document.createElement('div'); div.className='bg-base p-3 rounded border border-border hover:border-accent cursor-pointer group relative';
-                    div.innerHTML = `<div class="aspect-square bg-panel rounded mb-2 overflow-hidden border border-border flex items-center justify-center"><img src="${p.thumb||''}" class="w-full h-full object-contain pixelated-render"></div><div class="text-xs font-bold text-white truncate">${p.name}</div><div class="text-[9px] text-gray-500">${new Date(p.time).toLocaleString()}</div><button class="absolute top-2 right-2 bg-red-500/80 text-white w-6 h-6 rounded opacity-0 group-hover:opacity-100 hover:bg-red-500 flex items-center justify-center"><i class="fa-solid fa-trash text-[10px]"></i></button>`;
-                    div.onclick = (e) => { if(e.target.closest('button')) { e.stopPropagation(); if(confirm('Delete project?')) { localStorage.removeItem(k); loadProjectsList(); } } else { loadProjectData(p); E('projects-modal').classList.add('hidden'); } };
-                    list.appendChild(div);
-                } catch(e){}
-            });
-        }
-        function autoSaveProject() {
-            const name = E('project-name').value || 'Untitled';
-            const sc = Math.floor(256/gridSize), fs = gridSize*sc, c = document.createElement('canvas'); c.width=fs; c.height=fs; const ctx=c.getContext('2d'); ctx.imageSmoothingEnabled=false;
-            for(let y=0;y<gridSize;y++)for(let x=0;x<gridSize;x++){const col=getCompositedColorRGB(currentFrameIndex,x,y);if(col){ctx.fillStyle=col;ctx.fillRect(x*sc,y*sc,sc,sc);}}
-            const data = { name, time: Date.now(), gridSize, fps, frames, RETRO_PALETTE, thumb: c.toDataURL('image/png', 0.5) };
-            try { localStorage.setItem('pxl_proj_' + name, JSON.stringify(data)); const ind = E('auto-save-indicator'); ind.classList.remove('hidden'); setTimeout(()=>ind.classList.add('hidden'), 2000); } catch(e) {}
-        }
-        function loadProjectData(p) {
-            gridSize = p.gridSize; fps = p.fps || 12; frames = p.frames; E('project-name').value = p.name;
             frames.forEach(f=>f.layers.forEach(l=>{if(l.opacity===undefined)l.opacity=1;if(!l.blendMode)l.blendMode='normal';}));
             currentFrameIndex = 0; currentLayerIndex = 0; undoStack = []; E('fps-input').value = fps;
             document.querySelectorAll('[data-size]').forEach(b=>b.className=parseInt(b.dataset.size)===gridSize?'px-3 py-1.5 rounded-sm text-xs font-semibold bg-accent text-white shadow transition-all':'px-3 py-1.5 rounded-sm text-xs font-semibold text-gray-400 hover:text-white hover:bg-[#2a2a32] transition-colors');
@@ -757,7 +787,29 @@
             E('btn-shape-square').addEventListener('click', () => { brushShape='square'; E('btn-shape-square').className='w-5 h-5 bg-accent text-white rounded text-[10px] flex items-center justify-center transition-colors'; E('btn-shape-circle').className='w-5 h-5 bg-panel text-gray-400 hover:text-white rounded text-[10px] flex items-center justify-center transition-colors'; });
             E('btn-shape-circle').addEventListener('click', () => { brushShape='circle'; E('btn-shape-circle').className='w-5 h-5 bg-accent text-white rounded text-[10px] flex items-center justify-center transition-colors'; E('btn-shape-square').className='w-5 h-5 bg-panel text-gray-400 hover:text-white rounded text-[10px] flex items-center justify-center transition-colors'; });
 
-            // Filters & Ref & Play & Toggle            // Mode button
+            // Filters & Ref & Play & Toggle            E('btn-export-options').addEventListener('click', () => { E('export-modal').classList.remove('hidden'); });
+            E('btn-export-close').addEventListener('click', () => { E('export-modal').classList.add('hidden'); });
+            E('export-png').addEventListener('click', () => exportImage('png', parseInt(E('export-scale').value)));
+            E('export-sheet-btn').addEventListener('click', () => exportImage('sheet', parseInt(E('export-scale').value)));
+            E('export-svg').addEventListener('click', exportSVG);
+            E('export-css').addEventListener('click', exportCSS);
+            E('export-gif-btn').addEventListener('click', () => { commitAndClearSelection(); fetch('https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js').then(r=>r.text()).then(t=>{ const b=new Blob([t],{type:'application/javascript'}), w=URL.createObjectURL(b), sc=parseInt(E('export-scale').value), fs=gridSize*sc, gif=new GIF({workers:2,quality:10,width:fs,height:fs,workerScript:w,transparent:'rgba(0,0,0,0)'}); frames.forEach(f=>{const c=document.createElement('canvas');c.width=fs;c.height=fs;const ctx=c.getContext('2d');ctx.imageSmoothingEnabled=false;for(let y=0;y<gridSize;y++)for(let x=0;x<gridSize;x++){const col=getCompositedColorRGB(frames.indexOf(f),x,y);if(col){ctx.fillStyle=col;ctx.fillRect(x*sc,y*sc,sc,sc);}}gif.addFrame(c,{delay:1000/fps});}); gif.on('finished',b=>{const l=document.createElement('a');l.download=`anim_${gridSize}px.gif`;l.href=URL.createObjectURL(b);l.click(); E('export-modal').classList.add('hidden');}); gif.render(); }); });
+
+            // Quick Export Buttons
+            E('btn-quick-png').addEventListener('click', () => exportImage('png', 8));
+            E('btn-quick-gif').addEventListener('click', () => { commitAndClearSelection(); fetch('https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js').then(r=>r.text()).then(t=>{ const b=new Blob([t],{type:'application/javascript'}), w=URL.createObjectURL(b), sc=8, fs=gridSize*sc, gif=new GIF({workers:2,quality:10,width:fs,height:fs,workerScript:w,transparent:'rgba(0,0,0,0)'}); frames.forEach(f=>{const c=document.createElement('canvas');c.width=fs;c.height=fs;const ctx=c.getContext('2d');ctx.imageSmoothingEnabled=false;for(let y=0;y<gridSize;y++)for(let x=0;x<gridSize;x++){const col=getCompositedColorRGB(frames.indexOf(f),x,y);if(col){ctx.fillStyle=col;ctx.fillRect(x*sc,y*sc,sc,sc);}}gif.addFrame(c,{delay:1000/fps});}); gif.on('finished',b=>{const l=document.createElement('a');l.download=`anim_${gridSize}px.gif`;l.href=URL.createObjectURL(b);l.click();}); gif.render(); }); });
+
+            // Welcome Modal Handlers
+            E('btn-new-drawing').addEventListener('click', () => {
+                E('welcome-modal').classList.add('hidden');
+                initData();
+                setAppMode('drawing');
+            });
+            E('btn-new-animation').addEventListener('click', () => {
+                E('welcome-modal').classList.add('hidden');
+                initData();
+                setAppMode('animation');
+            });
             E('btn-mode').addEventListener('click', () => E('mode-modal').classList.remove('hidden'));
             // Mode modal controls
             document.querySelectorAll('.mode-option').forEach(btn => {
