@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <link rel="icon" href="favicon.png" type="image/png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="google-site-verification" content="jFSTvPoyg1DVy4uSBOQ10LRvPajTBVfD2J0y8DQKzkk" />
     <title>PixelStudio Pro - Masterclass Edition</title>
@@ -47,17 +48,14 @@
                     PixelStudio
                     <span class="bg-accent/20 text-accent px-1.5 py-0.5 rounded text-[10px] border border-accent/30">MASTERCLASS</span>
                     <span class="text-[9px] text-gray-500 lowercase font-medium ml-1 tracking-widest mt-0.5">by Zypher Studio</span>
+                    <img src="zypher_logo.png" class="h-6 inline-block ml-2" alt="Zypher Studio Logo" />
                 </h1>
             </div>
         </div>
         
         <div class="flex items-center gap-4">
-            <!-- Project Manager -->
-            <div class="flex items-center gap-2">
-                <input type="text" id="project-name" value="Untitled" class="bg-[#18181d] border border-border rounded px-2 py-1 text-xs text-white outline-none w-32 focus:border-accent" title="Project Name">
-                <button id="btn-projects" class="flex items-center gap-1 bg-[#18181d] hover:bg-[#2a2a32] text-gray-400 hover:text-white px-3 py-1.5 rounded text-xs border border-border transition-colors shadow-sm font-bold uppercase tracking-wide" title="My Projects"><i class="fa-solid fa-folder"></i> Projects</button>
-                <span id="auto-save-indicator" class="text-[9px] text-gray-500 uppercase tracking-widest hidden"><i class="fa-solid fa-cloud-arrow-up"></i> Saved</span>
-            </div>
+                    <!-- Mode Selector Button -->
+                <button id="btn-mode" class="flex items-center gap-1 bg-[#18181d] hover:bg-[#2a2a32] text-gray-400 hover:text-white px-3 py-1.5 rounded text-xs border border-border transition-colors shadow-sm" title="Select Mode"><i class="fa-solid fa-sliders"></i> Mode</button></div>
             <div class="w-px h-6 bg-border mx-1"></div>
 
             <!-- Save/Load File -->
@@ -200,6 +198,7 @@
                         <div class="bg-base p-2 rounded border border-border flex-1 flex flex-col items-center shadow-inner relative group cursor-pointer" onclick="document.getElementById('color-picker').click()">
                             <div class="text-[8px] uppercase text-gray-500 mb-1 font-bold">Primary (L)</div>
                             <div class="relative w-8 h-8 rounded overflow-hidden shadow-md border-2 border-white shrink-0"><input type="color" id="color-picker" class="absolute -top-2 -left-2 w-12 h-12 cursor-pointer" value="#b13e53"></div>
+                            <div id="color-hex" class="text-xs font-mono text-gray-300 mt-1"></div>
                         </div>
                         <div class="bg-base p-2 rounded border border-border flex-1 flex flex-col items-center shadow-inner relative group cursor-pointer" onclick="document.getElementById('color-picker-sec').click()">
                             <div class="text-[8px] uppercase text-gray-500 mb-1 font-bold">Secondary (R)</div>
@@ -234,6 +233,7 @@
                         <span class="text-[10px] font-bold text-gray-500 uppercase tracking-widest flex items-center gap-1"><i class="fa-solid fa-image"></i> Ref Image</span>
                         <div class="flex items-center gap-1">
                             <button id="btn-load-ref" class="bg-panel border border-border px-2 py-1 rounded text-[9px] font-bold uppercase text-gray-400 hover:text-white transition-all shadow-sm">Load</button>
+                            <input type="file" id="ref-image-input" class="hidden" accept="image/*">
                             <button id="btn-clear-ref" class="w-6 h-6 flex items-center justify-center bg-panel border border-border rounded text-red-400 hover:text-red-300 hidden"><i class="fa-solid fa-trash text-[9px]"></i></button>
                         </div>
                     </div>
@@ -359,6 +359,21 @@
             </div>
         </div>
     </div>
+
+        <!-- Mode Selection Modal -->
+        <div id="mode-modal" class="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center hidden">
+            <div class="bg-panel border border-border p-6 rounded-lg shadow-2xl w-80">
+                <h2 class="text-white font-bold mb-4 flex items-center gap-2"><i class="fa-solid fa-sliders text-accent"></i> Select Mode</h2>
+                <div class="flex flex-col gap-3">
+                    <button class="mode-option bg-accent hover:bg-accentHover text-white py-2 rounded" data-mode="normal">Normal Drawing</button>
+                    <button class="mode-option bg-accent hover:bg-accentHover text-white py-2 rounded" data-mode="upscale">AI Pixel Upscaler</button>
+                    <button class="mode-option bg-accent hover:bg-accentHover text-white py-2 rounded" data-mode="custombrush">Custom Brush Maker</button>
+                </div>
+                <div class="flex justify-end mt-4">
+                    <button id="mode-close" class="px-4 py-2 rounded text-gray-400 hover:text-white text-xs font-bold uppercase">Close</button>
+                </div>
+            </div>
+        </div>
 
     <script>
         const MAX_UNDO = 30; let gridSize = 32, currentColor = '#b13e53', currentColorSec = '#000000', currentTool = 'pen'; 
@@ -511,6 +526,33 @@
         function undo() { if(undoStack.length===0||isPlaying)return; commitAndClearSelection(); const s=undoStack.pop(); frames=s.frames; currentFrameIndex=s.currentFrameIndex; currentLayerIndex=s.currentLayerIndex; renderTimeline(); renderLayersPanel(); renderMainGrid(); }
         function updateSelectionOverlay() { const d = E('selection-overlay'); if(!selectionBox&&!floatingSelection){d.classList.add('hidden');return;} d.classList.remove('hidden'); let mx,my,w,h; if(isSelecting&&selectionBox){mx=Math.min(selectionBox.startX,selectionBox.endX);const Mx=Math.max(selectionBox.startX,selectionBox.endX); my=Math.min(selectionBox.startY,selectionBox.endY);const My=Math.max(selectionBox.startY,selectionBox.endY); w=Mx-mx+1;h=My-my+1;} else if(floatingSelection){mx=floatingSelection.x;my=floatingSelection.y;w=floatingSelection.w;h=floatingSelection.h;} else return; d.style.left=(mx/gridSize*100)+'%'; d.style.top=(my/gridSize*100)+'%'; d.style.width=(w/gridSize*100)+'%'; d.style.height=(h/gridSize*100)+'%'; }
         function commitSelection() { if(!floatingSelection)return; const l=frames[currentFrameIndex].layers[currentLayerIndex]; for(let y=0;y<floatingSelection.h;y++)for(let x=0;x<floatingSelection.w;x++){const gy=floatingSelection.y+y,gx=floatingSelection.x+x,c=floatingSelection.grid[y][x]; if(c&&gy>=0&&gy<gridSize&&gx>=0&&gx<gridSize)l.grid[gy][gx]=c;} floatingSelection=null; selectionBox=null; updateSelectionOverlay(); renderMainGrid(); }
+
+        // Create floating selection from current selection box
+        function createFloatingSelection(){
+            if(!selectionBox) return;
+            const minX=Math.min(selectionBox.startX,selectionBox.endX);
+            const maxX=Math.max(selectionBox.startX,selectionBox.endX);
+            const minY=Math.min(selectionBox.startY,selectionBox.endY);
+            const maxY=Math.max(selectionBox.startY,selectionBox.endY);
+            const w=maxX-minX+1;
+            const h=maxY-minY+1;
+            floatingSelection={grid:Array(h).fill(null).map(()=>Array(w).fill(null)), x:minX, y:minY, w, h};
+            // copy selected pixels
+            const l=frames[currentFrameIndex].layers[currentLayerIndex];
+            for(let yy=0; yy<h; yy++){
+                for(let xx=0; xx<w; xx++){
+                    const gx=minX+xx, gy=minY+yy;
+                    const col=l.grid[gy][gx];
+                    if(col){
+                        floatingSelection.grid[yy][xx]=col;
+                        l.grid[gy][gx]=null;
+                    }
+                }
+            }
+            setTool('select');
+            updateSelectionOverlay();
+            renderMainGrid();
+        }
 
         // Compositing & Render
         function getCompositedColorRGB(fIndex, x, y) {
@@ -715,22 +757,27 @@
             E('btn-shape-square').addEventListener('click', () => { brushShape='square'; E('btn-shape-square').className='w-5 h-5 bg-accent text-white rounded text-[10px] flex items-center justify-center transition-colors'; E('btn-shape-circle').className='w-5 h-5 bg-panel text-gray-400 hover:text-white rounded text-[10px] flex items-center justify-center transition-colors'; });
             E('btn-shape-circle').addEventListener('click', () => { brushShape='circle'; E('btn-shape-circle').className='w-5 h-5 bg-accent text-white rounded text-[10px] flex items-center justify-center transition-colors'; E('btn-shape-square').className='w-5 h-5 bg-panel text-gray-400 hover:text-white rounded text-[10px] flex items-center justify-center transition-colors'; });
 
-            // Filters & Ref & Play & Toggles
-            E('btn-hsv').addEventListener('click', () => { commitAndClearSelection(); saveState(); hsvBackup=JSON.parse(JSON.stringify(frames[currentFrameIndex].layers[currentLayerIndex].grid)); E('hsv-h').value=0;E('hsv-h-val').textContent=0; E('hsv-s').value=0;E('hsv-s-val').textContent=0; E('hsv-l').value=0;E('hsv-l-val').textContent=0; E('hsv-modal').classList.remove('hidden'); });
-            ['h','s','l'].forEach(t => E(`hsv-${t}`).addEventListener('input', e => { E(`hsv-${t}-val`).textContent=e.target.value; if(!hsvBackup)return; const hSh=parseInt(E('hsv-h').value), sSh=parseInt(E('hsv-s').value), lSh=parseInt(E('hsv-l').value), l=frames[currentFrameIndex].layers[currentLayerIndex]; for(let y=0;y<gridSize;y++)for(let x=0;x<gridSize;x++){const c=hsvBackup[y][x]; if(c){const rgb=hexToRgb(c), hsl=hexToHSL("#"+[rgb.r,rgb.g,rgb.b].map(v=>v.toString(16).padStart(2,'0')).join('')); hsl.h=(hsl.h+hSh+360)%360; hsl.s=Math.max(0,Math.min(100,hsl.s+sSh)); hsl.l=Math.max(0,Math.min(100,hsl.l+lSh)); l.grid[y][x]=HSLToHex(hsl.h,hsl.s,hsl.l);}} renderMainGrid(); }));
-            E('btn-hsv-cancel').addEventListener('click', () => { const l=frames[currentFrameIndex].layers[currentLayerIndex]; for(let y=0;y<gridSize;y++)for(let x=0;x<gridSize;x++)l.grid[y][x]=hsvBackup[y][x]; hsvBackup=null; renderMainGrid(); undoStack.pop(); E('hsv-modal').classList.add('hidden'); });
-            E('btn-hsv-apply').addEventListener('click', () => { hsvBackup=null; E('hsv-modal').classList.add('hidden'); });
-            E('btn-load-ref').addEventListener('click', () => E('ref-image-input').click());
-            E('ref-image-input').addEventListener('change', e => { const f=e.target.files[0]; if(f){const r=new FileReader(); r.onload=ev=>{E('ref-img').src=ev.target.result; E('ref-img').classList.remove('hidden'); E('btn-load-ref').classList.add('hidden'); E('btn-clear-ref').classList.remove('hidden'); E('ref-opacity').classList.remove('hidden');}; r.readAsDataURL(f);} });
-            E('btn-clear-ref').addEventListener('click', () => { E('ref-img').src=''; E('ref-img').classList.add('hidden'); E('btn-load-ref').classList.remove('hidden'); E('btn-clear-ref').classList.add('hidden'); E('ref-opacity').classList.add('hidden'); E('ref-image-input').value=''; });
-            E('ref-opacity').addEventListener('input', e => E('ref-img').style.opacity = e.target.value/100);
-            E('btn-play').addEventListener('click', () => { isPlaying=!isPlaying; const p=E('btn-play'); if(isPlaying){commitAndClearSelection();p.innerHTML='<i class="fa-solid fa-pause"></i>';p.classList.add('bg-accent','text-white');playInterval=setInterval(()=>{currentFrameIndex=(currentFrameIndex+1)%frames.length;renderTimeline();renderMainGrid();},1000/fps);} else {p.innerHTML='<i class="fa-solid fa-play"></i>';p.classList.remove('bg-accent','text-white');clearInterval(playInterval);} });
-            E('fps-input').addEventListener('change', e => { fps=parseInt(e.target.value)||12; if(isPlaying){clearInterval(playInterval);playInterval=setInterval(()=>{currentFrameIndex=(currentFrameIndex+1)%frames.length;renderTimeline();renderMainGrid();},1000/fps);} });
-            ['onion','tile','pixel-perfect'].forEach(t => E(`toggle-${t}`).addEventListener('change', e => { const c=e.target.checked, k=E(t==='pixel-perfect'?'pp-knob':`${t}-knob`), s=E(t==='pixel-perfect'?'pp-switch':`${t}-switch`); if(c){k.classList.replace('left-[2px]',t==='pixel-perfect'?'left-[16px]':'left-[14px]');k.classList.replace('bg-gray-500','bg-white');s.classList.replace('border-border','border-accent');if(t==='pixel-perfect')s.classList.replace('bg-panel','bg-accent');else s.classList.replace('bg-base','bg-accent');} else{k.classList.replace(t==='pixel-perfect'?'left-[16px]':'left-[14px]','left-[2px]');k.classList.replace('bg-white','bg-gray-500');s.classList.replace('border-accent','border-border');if(t==='pixel-perfect')s.classList.replace('bg-accent','bg-panel');else s.classList.replace('bg-accent','bg-base');} if(t==='onion'){onionSkinning=c;renderMainGrid();} if(t==='tile'){isTileMode=c;updatePreview();} if(t==='pixel-perfect')isPixelPerfect=c; }));
+            // Filters & Ref & Play & Toggle            // Mode button
+            E('btn-mode').addEventListener('click', () => E('mode-modal').classList.remove('hidden'));
+            // Mode modal controls
+            document.querySelectorAll('.mode-option').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const mode = btn.dataset.mode;
+                    if (mode === 'normal') {
+                        // just close modal, stay in normal drawing
+                        E('mode-modal').classList.add('hidden');
+                    } else if (mode === 'upscale') {
+                        E('mode-modal').classList.add('hidden');
+                        alert('AI Pixel Upscaler coming soon!');
+                        // placeholder for future implementation
+                    } else if (mode === 'custombrush') {
+                        E('mode-modal').classList.add('hidden');
+                        alert('Custom Brush Maker coming soon!');
+                    }
+                });
+            });
+            E('mode-close').addEventListener('click', () => E('mode-modal').classList.add('hidden'));
 
-            // Quick Export Buttons
-            E('btn-quick-png').addEventListener('click', () => exportImage('png', 8));
-            E('btn-quick-gif').addEventListener('click', () => { commitAndClearSelection(); fetch('https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js').then(r=>r.text()).then(t=>{ const b=new Blob([t],{type:'application/javascript'}), w=URL.createObjectURL(b), sc=8, fs=gridSize*sc, gif=new GIF({workers:2,quality:10,width:fs,height:fs,workerScript:w,transparent:'rgba(0,0,0,0)'}); frames.forEach(f=>{const c=document.createElement('canvas');c.width=fs;c.height=fs;const ctx=c.getContext('2d');ctx.imageSmoothingEnabled=false;for(let y=0;y<gridSize;y++)for(let x=0;x<gridSize;x++){const col=getCompositedColorRGB(frames.indexOf(f),x,y);if(col){ctx.fillStyle=col;ctx.fillRect(x*sc,y*sc,sc,sc);}}gif.addFrame(c,{delay:1000/fps});}); gif.on('finished',b=>{const l=document.createElement('a');l.download=`anim_${gridSize}px.gif`;l.href=URL.createObjectURL(b);l.click();}); gif.render(); }); });
         }
 
         function updateColorHistory(c) {
@@ -741,7 +788,8 @@
             colorHistory.forEach(c => { const d = document.createElement('div'); d.className='w-5 h-5 rounded shrink-0 cursor-pointer border border-[#3a3a44] shadow-sm hover:scale-110 transition-transform'; d.style.backgroundColor=c; d.onclick=()=>setColor(c); h.appendChild(d); });
         }
         function initPalette() { paletteGrid.innerHTML=''; RETRO_PALETTE.forEach(c => { const s=document.createElement('div');s.className='color-swatch';s.style.backgroundColor=c;s.dataset.color=c;if(c.toLowerCase()===currentColor.toLowerCase())s.classList.add('active');s.onclick=()=>setColor(c);paletteGrid.appendChild(s); }); }
-        function setColor(c) { updateColorHistory(c); currentColor=c; E('color-picker').value=c; E('color-hex').textContent=c.toUpperCase(); document.querySelectorAll('.color-swatch').forEach(s=>{s.classList.remove('active');if(s.dataset.color.toLowerCase()===c.toLowerCase())s.classList.add('active');}); const hex=hexToRgb(c), hHex="#"+[hex.r,hex.g,hex.b].map(x=>x.toString(16).padStart(2,'0')).join(''), hsl=hexToHSL(hHex), lg=HSLToHex(hsl.h,Math.max(0,hsl.s-5),Math.min(100,hsl.l+15)), dk=HSLToHex(hsl.h,Math.min(100,hsl.s+5),Math.max(0,hsl.l-15)); E('color-light').style.backgroundColor=lg; E('color-light').onclick=()=>setColor(lg); E('color-dark').style.backgroundColor=dk; E('color-dark').onclick=()=>setColor(dk); if(['eraser','select','magic-wand','replace-color'].includes(currentTool)) setTool('pen'); }
+        function setColor(c) { updateColorHistory(c); currentColor=c; E('color-picker').value=c;        const hexEl = E('color-hex');
+        if (hexEl) hexEl.textContent = c.toUpperCase(); document.querySelectorAll('.color-swatch').forEach(s=>{s.classList.remove('active');if(s.dataset.color.toLowerCase()===c.toLowerCase())s.classList.add('active');}); const hex=hexToRgb(c), hHex="#"+[hex.r,hex.g,hex.b].map(x=>x.toString(16).padStart(2,'0')).join(''), hsl=hexToHSL(hHex), lg=HSLToHex(hsl.h,Math.max(0,hsl.s-5),Math.min(100,hsl.l+15)), dk=HSLToHex(hsl.h,Math.min(100,hsl.s+5),Math.max(0,hsl.l-15)); E('color-light').style.backgroundColor=lg; E('color-light').onclick=()=>setColor(lg); E('color-dark').style.backgroundColor=dk; E('color-dark').onclick=()=>setColor(dk); if(['eraser','select','magic-wand','replace-color'].includes(currentTool)) setTool('pen'); }
         function setTool(t) { if(floatingSelection&&t!=='select')commitSelection(); currentTool=t; toolButtons.forEach(b=>{const icon=b.querySelector('i'); if(b.dataset.tool===t){b.classList.add('active');if(icon){icon.classList.remove('text-gray-400','text-[#ff793f]','text-[#ffda79]');icon.classList.add('text-white');}}else{b.classList.remove('active');if(icon){icon.classList.remove('text-white');if(!icon.classList.contains('text-[#ff793f]')&&!icon.classList.contains('text-[#ffda79]'))icon.classList.add('text-gray-400');}}}); }
         function hexToHSL(hex) { let r=/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex), rC=parseInt(r[1],16)/255,gC=parseInt(r[2],16)/255,bC=parseInt(r[3],16)/255, mx=Math.max(rC,gC,bC), mn=Math.min(rC,gC,bC), h,s,l=(mx+mn)/2; if(mx===mn)h=s=0;else{let d=mx-mn;s=l>0.5?d/(2-mx-mn):d/(mx+mn);switch(mx){case rC:h=(gC-bC)/d+(gC<bC?6:0);break;case gC:h=(bC-rC)/d+2;break;case bC:h=(rC-gC)/d+4;break;}h/=6;} return {h:h*360,s:s*100,l:l*100}; }
         function HSLToHex(h,s,l) { s/=100;l/=100;let c=(1-Math.abs(2*l-1))*s, x=c*(1-Math.abs((h/60)%2-1)), m=l-c/2, r=0,g=0,b=0; if(h<60){r=c;g=x;b=0;}else if(h<120){r=x;g=c;b=0;}else if(h<180){r=0;g=c;b=x;}else if(h<240){r=0;g=x;b=c;}else if(h<300){r=x;g=0;b=c;}else{r=c;g=0;b=x;} return `#${Math.round((r+m)*255).toString(16).padStart(2,'0')}${Math.round((g+m)*255).toString(16).padStart(2,'0')}${Math.round((b+m)*255).toString(16).padStart(2,'0')}`; }
