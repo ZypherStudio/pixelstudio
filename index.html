@@ -675,6 +675,36 @@
                 } list.appendChild(d);
             });
         }
+        function loadWelcomeRecentProjects() {
+            const list = E('welcome-recent-list'); list.innerHTML = '';
+            const keys = Object.keys(localStorage).filter(k=>k.startsWith('pixelstudio_')).sort((a,b)=>b.localeCompare(a));
+            if(keys.length === 0) { list.innerHTML = '<div class="text-gray-500 text-xs text-center mt-10">No recent projects</div>'; return; }
+            keys.forEach(k=>{
+                try {
+                    const p = JSON.parse(localStorage.getItem(k));
+                    const d = document.createElement('div');
+                    d.className = 'bg-base p-3 rounded border border-border hover:border-accent cursor-pointer transition-all flex items-center justify-between group shadow-sm';
+                    d.innerHTML = `
+                        <div class="flex items-center gap-3">
+                            <i class="fa-solid ${p.appMode === 'animation' ? 'fa-film text-[#ffda79]' : 'fa-paintbrush text-[#41a6f6]'}"></i>
+                            <div>
+                                <div class="text-sm text-white font-bold">${p.name}</div>
+                                <div class="text-[10px] text-gray-500">${p.frames.length} Frame(s) • ${p.gridSize}x${p.gridSize}</div>
+                            </div>
+                        </div>
+                    `;
+                    d.onclick = () => { loadProjectData(p); E('welcome-modal').classList.add('hidden'); };
+                    list.appendChild(d);
+                } catch(e){}
+            });
+        }
+        function autoSaveProject() {
+            const name = E('project-name') ? E('project-name').value : 'Untitled';
+            const data = { v: 1, name, gridSize, fps, frames, currentFrameIndex, currentLayerIndex, appMode };
+            localStorage.setItem(`pixelstudio_${name}_${Date.now()}`, JSON.stringify(data));
+            const ind = E('auto-save-indicator');
+            if(ind) { ind.classList.remove('hidden'); setTimeout(()=>ind.classList.add('hidden'), 2000); }
+        }
         function loadProjectData(p) {
             frames.forEach(f=>f.layers.forEach(l=>{if(l.opacity===undefined)l.opacity=1;if(!l.blendMode)l.blendMode='normal';}));
             currentFrameIndex = 0; currentLayerIndex = 0; undoStack = []; E('fps-input').value = fps;
