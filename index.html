@@ -391,16 +391,22 @@
                     <div class="flex-1 p-8 flex flex-col items-center justify-center border-r border-border bg-[#18181d]/50">
                         <h2 class="text-white text-xl font-bold mb-6 tracking-wider uppercase">Start New Project</h2>
                         <div class="flex flex-col gap-4 w-full px-8">
-                            <button id="btn-new-drawing" class="group flex flex-col items-center gap-2 p-6 rounded-lg bg-base border-2 border-transparent hover:border-accent hover:bg-[#2a2a32] transition-all shadow-md">
-                                <i class="fa-solid fa-paintbrush text-4xl text-gray-400 group-hover:text-accent transition-colors"></i>
+                            <button id="btn-new-drawing" class="group flex flex-col items-center gap-2 p-4 rounded-lg bg-base border-2 border-transparent hover:border-accent hover:bg-[#2a2a32] transition-all shadow-md">
+                                <i class="fa-solid fa-paintbrush text-3xl text-gray-400 group-hover:text-accent transition-colors"></i>
                                 <span class="text-white font-bold tracking-wide">Drawing Mode</span>
                                 <span class="text-[10px] text-gray-500 text-center">Single frame canvas for illustrations and sprites.</span>
                             </button>
-                            <button id="btn-new-animation" class="group flex flex-col items-center gap-2 p-6 rounded-lg bg-base border-2 border-transparent hover:border-accent hover:bg-[#2a2a32] transition-all shadow-md">
-                                <i class="fa-solid fa-film text-4xl text-gray-400 group-hover:text-accent transition-colors"></i>
+                            <button id="btn-new-animation" class="group flex flex-col items-center gap-2 p-4 rounded-lg bg-base border-2 border-transparent hover:border-accent hover:bg-[#2a2a32] transition-all shadow-md">
+                                <i class="fa-solid fa-film text-3xl text-gray-400 group-hover:text-accent transition-colors"></i>
                                 <span class="text-white font-bold tracking-wide">Animation Mode</span>
                                 <span class="text-[10px] text-gray-500 text-center">Timeline-based workspace for sprite animations.</span>
                             </button>
+                            <button id="btn-import-image" class="group flex flex-col items-center gap-2 p-4 rounded-lg bg-base border-2 border-transparent hover:border-accent hover:bg-[#2a2a32] transition-all shadow-md">
+                                <i class="fa-solid fa-file-image text-3xl text-gray-400 group-hover:text-accent transition-colors"></i>
+                                <span class="text-white font-bold tracking-wide">Import Image</span>
+                                <span class="text-[10px] text-gray-500 text-center">Open an external image as a new project.</span>
+                            </button>
+                            <input type="file" id="import-image-input" accept="image/png, image/jpeg, image/webp" class="hidden">
                         </div>
                     </div>
                     <!-- Right: Recent Files -->
@@ -709,6 +715,8 @@
             if(ind) { ind.classList.remove('hidden'); setTimeout(()=>ind.classList.add('hidden'), 2000); }
         }
         function loadProjectData(p) {
+            gridSize = p.gridSize || 32; fps = p.fps || 12; frames = p.frames; E('project-name').value = p.name || 'Untitled';
+            if (p.appMode) setAppMode(p.appMode);
             frames.forEach(f=>f.layers.forEach(l=>{if(l.opacity===undefined)l.opacity=1;if(!l.blendMode)l.blendMode='normal';}));
             currentFrameIndex = 0; currentLayerIndex = 0; undoStack = []; E('fps-input').value = fps;
             document.querySelectorAll('[data-size]').forEach(b=>b.className=parseInt(b.dataset.size)===gridSize?'px-3 py-1.5 rounded-sm text-xs font-semibold bg-accent text-white shadow transition-all':'px-3 py-1.5 rounded-sm text-xs font-semibold text-gray-400 hover:text-white hover:bg-[#2a2a32] transition-colors');
@@ -819,6 +827,33 @@
 
 
             // Welcome Modal Handlers
+            E('btn-import-image').addEventListener('click', () => { E('import-image-input').click(); });
+            E('import-image-input').addEventListener('change', e => {
+                const f = e.target.files[0]; if (!f) return;
+                const img = new Image();
+                img.onload = () => {
+                    let newSize = 32;
+                    if (img.width <= 16 && img.height <= 16) newSize = 16;
+                    else if (img.width <= 32 && img.height <= 32) newSize = 32;
+                    else newSize = 64;
+                    initGridSize(newSize);
+                    E('project-name').value = f.name.replace(/\.[^/.]+$/, "");
+                    const c = document.createElement('canvas'); c.width = newSize; c.height = newSize;
+                    const ctx = c.getContext('2d'); ctx.drawImage(img, 0, 0, newSize, newSize);
+                    const imgData = ctx.getImageData(0, 0, newSize, newSize).data;
+                    const l = frames[0].layers[0];
+                    for(let y=0; y<newSize; y++) {
+                        for(let x=0; x<newSize; x++) {
+                            const i = (y*newSize + x) * 4;
+                            if (imgData[i+3] > 10) l.grid[y][x] = `rgba(${imgData[i]},${imgData[i+1]},${imgData[i+2]},${imgData[i+3]/255})`;
+                        }
+                    }
+                    E('welcome-modal').classList.add('hidden');
+                    setAppMode('drawing'); renderTimeline(); renderLayersPanel(); renderMainGrid();
+                    E('import-image-input').value = '';
+                };
+                img.src = URL.createObjectURL(f);
+            });
             E('btn-new-drawing').addEventListener('click', () => {
                 E('welcome-modal').classList.add('hidden');
                 initData();
