@@ -1092,35 +1092,13 @@
 
 
             // Welcome Modal Handlers
-            E('btn-import-image').addEventListener('click', () => { E('import-image-input').click(); });
+            E('btn-import-image').addEventListener('click', () => { E('file-import-png').click(); });
             E('btn-import-spritesheet').addEventListener('click', () => { E('import-spritesheet-input').click(); });
-            E('import-image-input').addEventListener('change', e => {
-                const f = e.target.files[0]; if (!f) return;
-                const img = new Image();
-                img.onload = () => {
-                    let newSize = 32;
-                    if (img.width <= 16 && img.height <= 16) newSize = 16;
-                    else if (img.width <= 32 && img.height <= 32) newSize = 32;
-                    else newSize = 64;
-                    initGridSize(newSize);
-                    E('project-name').value = f.name.replace(/\.[^/.]+$/, "");
-                    const c = document.createElement('canvas'); c.width = newSize; c.height = newSize;
-                    const ctx = c.getContext('2d'); ctx.drawImage(img, 0, 0, newSize, newSize);
-                    const imgData = ctx.getImageData(0, 0, newSize, newSize).data;
-                    const l = frames[0].layers[0];
-                    for(let y=0; y<newSize; y++) {
-                        for(let x=0; x<newSize; x++) {
-                            const i = (y*newSize + x) * 4;
-                            if (imgData[i+3] > 10) l.grid[y][x] = `rgba(${imgData[i]},${imgData[i+1]},${imgData[i+2]},${imgData[i+3]/255})`;
-                        }
-                    }
-                    E('welcome-modal').classList.add('hidden');
-                    setAppMode('drawing'); renderTimeline(); renderLayersPanel(); renderMainGrid();
-                    E('import-image-input').value = '';
-                };
-                img.src = URL.createObjectURL(f);
-            });
-            E('import-spritesheet-input').addEventListener('change', e => {
+            // file-import-png handles both toolbar import and welcome screen import
+            // (handler already set up in the Import Image section above)
+            // Extended spritesheet import logic
+            const importImgInputWelcome = E('import-spritesheet-input');
+            if (importImgInputWelcome) importImgInputWelcome.addEventListener('change', e => {
                 const f = e.target.files[0]; if (!f) return;
                 const img = new Image();
                 img.onload = () => {
