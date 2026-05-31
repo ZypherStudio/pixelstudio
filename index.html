@@ -404,9 +404,15 @@
                             <button id="btn-import-image" class="group flex flex-col items-center gap-2 p-4 rounded-lg bg-base border-2 border-transparent hover:border-accent hover:bg-[#2a2a32] transition-all shadow-md">
                                 <i class="fa-solid fa-file-image text-3xl text-gray-400 group-hover:text-accent transition-colors"></i>
                                 <span class="text-white font-bold tracking-wide">Import Image</span>
-                                <span class="text-[10px] text-gray-500 text-center">Open an external image as a new project.</span>
+                                <span class="text-[10px] text-gray-500 text-center">Open an image as a drawing project.</span>
                             </button>
-                            <input type="file" id="import-image-input" accept="image/png, image/jpeg, image/webp" class="hidden">
+                            <button id="btn-import-spritesheet" class="group flex flex-col items-center gap-2 p-4 rounded-lg bg-base border-2 border-transparent hover:border-[#ffda79] hover:bg-[#2a2a32] transition-all shadow-md">
+                                <i class="fa-solid fa-table-cells text-3xl text-gray-400 group-hover:text-[#ffda79] transition-colors"></i>
+                                <span class="text-white font-bold tracking-wide">Import Spritesheet</span>
+                                <span class="text-[10px] text-gray-500 text-center">Open a spritesheet as animation frames.</span>
+                            </button>
+                            <input type="file" id="import-image-input" accept="image/png,image/jpeg,image/webp" class="hidden">
+                            <input type="file" id="import-spritesheet-input" accept="image/png,image/jpeg,image/webp" class="hidden">
                         </div>
                     </div>
                     <!-- Right: Recent Files -->
@@ -828,6 +834,7 @@
 
             // Welcome Modal Handlers
             E('btn-import-image').addEventListener('click', () => { E('import-image-input').click(); });
+            E('btn-import-spritesheet').addEventListener('click', () => { E('import-spritesheet-input').click(); });
             E('import-image-input').addEventListener('change', e => {
                 const f = e.target.files[0]; if (!f) return;
                 const img = new Image();
@@ -851,6 +858,45 @@
                     E('welcome-modal').classList.add('hidden');
                     setAppMode('drawing'); renderTimeline(); renderLayersPanel(); renderMainGrid();
                     E('import-image-input').value = '';
+                };
+                img.src = URL.createObjectURL(f);
+            });
+            E('import-spritesheet-input').addEventListener('change', e => {
+                const f = e.target.files[0]; if (!f) return;
+                const img = new Image();
+                img.onload = () => {
+                    // Auto-detect frame size: assume square frames, count = width / height
+                    let frameH = img.height;
+                    let frameW = frameH; // assume square frames
+                    let frameCount = Math.max(1, Math.round(img.width / frameW));
+                    // Pick grid size
+                    let newSize = 32;
+                    if (frameH <= 16) newSize = 16;
+                    else if (frameH <= 32) newSize = 32;
+                    else newSize = 64;
+                    gridSize = newSize;
+                    initGridSize(newSize);
+                    E('project-name').value = f.name.replace(/\.[^/.]+$/, "");
+                    // Create frames from spritesheet
+                    frames = [];
+                    for (let fi = 0; fi < frameCount; fi++) {
+                        const fc = document.createElement('canvas'); fc.width = newSize; fc.height = newSize;
+                        const fctx = fc.getContext('2d');
+                        fctx.drawImage(img, fi * frameW, 0, frameW, frameH, 0, 0, newSize, newSize);
+                        const fData = fctx.getImageData(0, 0, newSize, newSize).data;
+                        const grid = Array(newSize).fill(null).map(() => Array(newSize).fill(null));
+                        for (let y = 0; y < newSize; y++) {
+                            for (let x = 0; x < newSize; x++) {
+                                const i = (y * newSize + x) * 4;
+                                if (fData[i+3] > 10) grid[y][x] = `rgba(${fData[i]},${fData[i+1]},${fData[i+2]},${fData[i+3]/255})`;
+                            }
+                        }
+                        frames.push({ id: Date.now().toString() + fi, layers: [{ id: Date.now().toString() + 'l' + fi, name: 'Layer 1', visible: true, opacity: 1, blendMode: 'normal', grid }] });
+                    }
+                    currentFrameIndex = 0; currentLayerIndex = 0;
+                    E('welcome-modal').classList.add('hidden');
+                    setAppMode('animation'); initDOMGrid(); renderTimeline(); renderLayersPanel(); renderMainGrid(); updateSymmetryUI();
+                    E('import-spritesheet-input').value = '';
                 };
                 img.src = URL.createObjectURL(f);
             });
