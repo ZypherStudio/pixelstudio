@@ -243,6 +243,22 @@
                             <div id="color-dark" class="h-5 rounded cursor-pointer border border-border hover:scale-[1.03] transition-transform shadow-sm" style="background-color: #7d2c3a"></div>
                         </div>
                     </div>
+                    <!-- RGB Sliders -->
+                    <div class="mt-3 flex flex-col gap-2 bg-base p-2 rounded border border-border shadow-inner">
+                        <div class="flex items-center gap-2">
+                            <span class="text-[9px] font-bold text-red-400 w-3">R</span>
+                            <input type="range" id="slider-r" min="0" max="255" value="177" class="flex-1 h-1.5 bg-[#2a2a32] rounded-lg appearance-none cursor-pointer accent-red-400">
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[9px] font-bold text-green-400 w-3">G</span>
+                            <input type="range" id="slider-g" min="0" max="255" value="62" class="flex-1 h-1.5 bg-[#2a2a32] rounded-lg appearance-none cursor-pointer accent-green-400">
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[9px] font-bold text-blue-400 w-3">B</span>
+                            <input type="range" id="slider-b" min="0" max="255" value="83" class="flex-1 h-1.5 bg-[#2a2a32] rounded-lg appearance-none cursor-pointer accent-blue-400">
+                        </div>
+                        <button id="btn-add-to-palette" class="w-full mt-1 bg-panel hover:bg-[#2a2a32] border border-border text-gray-400 hover:text-white py-1 rounded text-[10px] font-bold uppercase transition-all shadow-sm"><i class="fa-solid fa-plus text-accent"></i> Add to Palette</button>
+                    </div>
                 </div>
                 
                 <!-- Palette -->
@@ -995,6 +1011,9 @@
             E('color-picker').addEventListener('input', e => setColor(e.target.value));
             E('color-picker-sec').addEventListener('input', e => { currentColorSec = e.target.value; updateColorHistory(e.target.value); });
             toolButtons.forEach(b => b.addEventListener('click', () => setTool(b.dataset.tool)));
+            const updateFromRGB = () => { const r=parseInt(E('slider-r').value), g=parseInt(E('slider-g').value), b=parseInt(E('slider-b').value); setColor("#"+(1<<24|r<<16|g<<8|b).toString(16).slice(1)); };
+            if(E('slider-r')) { E('slider-r').addEventListener('input', updateFromRGB); E('slider-g').addEventListener('input', updateFromRGB); E('slider-b').addEventListener('input', updateFromRGB); }
+            if(E('btn-add-to-palette')) { E('btn-add-to-palette').addEventListener('click', () => { const hc = currentColor.toLowerCase(); if(!RETRO_PALETTE.includes(hc)) { RETRO_PALETTE.push(hc); initPalette(); } }); }
             document.querySelectorAll('[data-size]').forEach(b => b.addEventListener('click', () => { if(confirm('Changing grid size will reset the current project. Continue?')) initGridSize(parseInt(b.dataset.size)); }));
             E('btn-clear').addEventListener('click', () => { if(confirm('Clear layer?')){commitAndClearSelection();saveState();frames[currentFrameIndex].layers[currentLayerIndex].grid=createEmptyGrid();renderMainGrid();} });
             E('btn-undo').addEventListener('click', undo); E('btn-add-frame').addEventListener('click', addFrame); E('btn-add-layer').addEventListener('click', () => { commitAndClearSelection(); saveState(); frames[currentFrameIndex].layers.push({ id:Date.now().toString(), name:`Layer ${frames[currentFrameIndex].layers.length+1}`, visible:true, opacity:1, blendMode:'normal', grid:createEmptyGrid() }); currentLayerIndex=frames[currentFrameIndex].layers.length-1; renderLayersPanel(); renderMainGrid(); });
@@ -1199,7 +1218,7 @@
         }
         function initPalette() { paletteGrid.innerHTML=''; RETRO_PALETTE.forEach(c => { const s=document.createElement('div');s.className='color-swatch';s.style.backgroundColor=c;s.dataset.color=c;if(c.toLowerCase()===currentColor.toLowerCase())s.classList.add('active');s.onclick=()=>setColor(c);paletteGrid.appendChild(s); }); }
         function setColor(c) { updateColorHistory(c); currentColor=c; E('color-picker').value=c;        const hexEl = E('color-hex');
-        if (hexEl) hexEl.textContent = c.toUpperCase(); document.querySelectorAll('.color-swatch').forEach(s=>{s.classList.remove('active');if(s.dataset.color.toLowerCase()===c.toLowerCase())s.classList.add('active');}); const hex=hexToRgb(c), hHex="#"+[hex.r,hex.g,hex.b].map(x=>x.toString(16).padStart(2,'0')).join(''), hsl=hexToHSL(hHex), lg=HSLToHex(hsl.h,Math.max(0,hsl.s-5),Math.min(100,hsl.l+15)), dk=HSLToHex(hsl.h,Math.min(100,hsl.s+5),Math.max(0,hsl.l-15)); E('color-light').style.backgroundColor=lg; E('color-light').onclick=()=>setColor(lg); E('color-dark').style.backgroundColor=dk; E('color-dark').onclick=()=>setColor(dk); if(['eraser','select','magic-wand','replace-color'].includes(currentTool)) setTool('pen'); }
+        if (hexEl) hexEl.textContent = c.toUpperCase(); document.querySelectorAll('.color-swatch').forEach(s=>{s.classList.remove('active');if(s.dataset.color.toLowerCase()===c.toLowerCase())s.classList.add('active');}); const hex=hexToRgb(c), hHex="#"+[hex.r,hex.g,hex.b].map(x=>x.toString(16).padStart(2,'0')).join(''), hsl=hexToHSL(hHex), lg=HSLToHex(hsl.h,Math.max(0,hsl.s-5),Math.min(100,hsl.l+15)), dk=HSLToHex(hsl.h,Math.min(100,hsl.s+5),Math.max(0,hsl.l-15)); E('color-light').style.backgroundColor=lg; E('color-light').onclick=()=>setColor(lg); E('color-dark').style.backgroundColor=dk; E('color-dark').onclick=()=>setColor(dk); if(E('slider-r')){E('slider-r').value=hex.r; E('slider-g').value=hex.g; E('slider-b').value=hex.b;} if(['eraser','select','magic-wand','replace-color'].includes(currentTool)) setTool('pen'); }
         function setTool(t) { if(floatingSelection&&t!=='select')commitSelection(); currentTool=t; toolButtons.forEach(b=>{const icon=b.querySelector('i'); if(b.dataset.tool===t){b.classList.add('active');if(icon){icon.classList.remove('text-gray-400','text-[#ff793f]','text-[#ffda79]');icon.classList.add('text-white');}}else{b.classList.remove('active');if(icon){icon.classList.remove('text-white');if(!icon.classList.contains('text-[#ff793f]')&&!icon.classList.contains('text-[#ffda79]'))icon.classList.add('text-gray-400');}}}); }
         function hexToHSL(hex) { let r=/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex), rC=parseInt(r[1],16)/255,gC=parseInt(r[2],16)/255,bC=parseInt(r[3],16)/255, mx=Math.max(rC,gC,bC), mn=Math.min(rC,gC,bC), h,s,l=(mx+mn)/2; if(mx===mn)h=s=0;else{let d=mx-mn;s=l>0.5?d/(2-mx-mn):d/(mx+mn);switch(mx){case rC:h=(gC-bC)/d+(gC<bC?6:0);break;case gC:h=(bC-rC)/d+2;break;case bC:h=(rC-gC)/d+4;break;}h/=6;} return {h:h*360,s:s*100,l:l*100}; }
         function HSLToHex(h,s,l) { s/=100;l/=100;let c=(1-Math.abs(2*l-1))*s, x=c*(1-Math.abs((h/60)%2-1)), m=l-c/2, r=0,g=0,b=0; if(h<60){r=c;g=x;b=0;}else if(h<120){r=x;g=c;b=0;}else if(h<180){r=0;g=c;b=x;}else if(h<240){r=0;g=x;b=c;}else if(h<300){r=x;g=0;b=c;}else{r=c;g=0;b=x;} return `#${Math.round((r+m)*255).toString(16).padStart(2,'0')}${Math.round((g+m)*255).toString(16).padStart(2,'0')}${Math.round((b+m)*255).toString(16).padStart(2,'0')}`; }
