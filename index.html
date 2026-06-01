@@ -41,8 +41,8 @@
     <!-- Top Bar -->
     <header class="h-14 bg-panel border-b border-border flex items-center justify-between px-6 shrink-0 z-30 shadow-md">
         <div class="flex items-center gap-4">
-            <div class="w-8 h-8 rounded flex items-center justify-center text-white shadow-lg border border-[#3a4b6c]" style="background: linear-gradient(135deg, var(--accent) 0%, #3a4b6c 100%);">
-                <i class="fa-solid fa-layer-group text-sm"></i>
+            <div id="btn-return-home" class="w-8 h-8 rounded flex items-center justify-center text-white shadow-lg border border-[#3a4b6c] cursor-pointer hover:scale-105 transition-transform" style="background: linear-gradient(135deg, var(--accent) 0%, #3a4b6c 100%);" title="Return to Home / Start Screen">
+                <i class="fa-solid fa-layer-group text-sm pointer-events-none"></i>
             </div>
             <div>
                 <h1 class="text-sm font-bold tracking-wide text-white uppercase flex items-center gap-2">
@@ -308,7 +308,7 @@
                                 <button id="btn-save-palette" class="bg-panel border border-border px-1.5 py-1 rounded text-[9px] font-bold uppercase text-gray-400 hover:text-white transition-all shadow-sm" title="Save .pal File"><i class="fa-solid fa-download"></i></button>
                             </div>
                         </div>
-                        <div id="palette-grid" class="grid grid-cols-5 gap-2 overflow-y-auto flex-1 pb-2 custom-scrollbar"></div>
+                        <div id="palette-grid" class="grid grid-cols-4 gap-2 overflow-y-auto flex-1 pb-2 custom-scrollbar"></div>
                     </div>
                 </div>
 
@@ -1026,6 +1026,7 @@
             const updateFromRGB = () => { const r=parseInt(E('slider-r').value), g=parseInt(E('slider-g').value), b=parseInt(E('slider-b').value); if(E('val-r')) E('val-r').textContent=r; if(E('val-g')) E('val-g').textContent=g; if(E('val-b')) E('val-b').textContent=b; setColor("#"+(1<<24|r<<16|g<<8|b).toString(16).slice(1)); };
             if(E('slider-r')) { E('slider-r').addEventListener('input', updateFromRGB); E('slider-g').addEventListener('input', updateFromRGB); E('slider-b').addEventListener('input', updateFromRGB); }
             if(E('btn-add-to-palette')) { E('btn-add-to-palette').addEventListener('click', () => { const hc = currentColor.toLowerCase(); const btn = E('btn-add-to-palette'); const resetHtml = '<i class="fa-solid fa-plus"></i> Add'; if(!RETRO_PALETTE.map(c=>c.toLowerCase()).includes(hc)) { RETRO_PALETTE.push(hc); initPalette(); E('palette-grid').scrollTop = E('palette-grid').scrollHeight; btn.innerHTML = '<i class="fa-solid fa-check text-green-400"></i> Added!'; setTimeout(() => btn.innerHTML = resetHtml, 1000); } else { btn.innerHTML = '<i class="fa-solid fa-exclamation text-yellow-400"></i> Exists'; setTimeout(() => btn.innerHTML = resetHtml, 1000); } }); }
+            if(E('btn-return-home')) { E('btn-return-home').addEventListener('click', () => { E('welcome-modal').classList.remove('hidden'); }); }
             document.querySelectorAll('[data-size]').forEach(b => b.addEventListener('click', () => { if(confirm('Changing grid size will reset the current project. Continue?')) initGridSize(parseInt(b.dataset.size)); }));
             E('btn-clear').addEventListener('click', () => { if(confirm('Clear layer?')){commitAndClearSelection();saveState();frames[currentFrameIndex].layers[currentLayerIndex].grid=createEmptyGrid();renderMainGrid();} });
             E('btn-undo').addEventListener('click', undo); E('btn-add-frame').addEventListener('click', addFrame); E('btn-add-layer').addEventListener('click', () => { commitAndClearSelection(); saveState(); frames[currentFrameIndex].layers.push({ id:Date.now().toString(), name:`Layer ${frames[currentFrameIndex].layers.length+1}`, visible:true, opacity:1, blendMode:'normal', grid:createEmptyGrid() }); currentLayerIndex=frames[currentFrameIndex].layers.length-1; renderLayersPanel(); renderMainGrid(); });
