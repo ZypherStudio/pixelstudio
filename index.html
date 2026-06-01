@@ -243,35 +243,46 @@
                             <div id="color-dark" class="h-5 rounded cursor-pointer border border-border hover:scale-[1.03] transition-transform shadow-sm" style="background-color: #7d2c3a"></div>
                         </div>
                     </div>
-                    <!-- RGB Sliders -->
-                    <div class="mt-3 flex flex-col gap-2 bg-base p-2 rounded border border-border shadow-inner">
-                        <div class="flex items-center gap-2">
-                            <span class="text-[9px] font-bold text-red-400 w-3">R</span>
-                            <input type="range" id="slider-r" min="0" max="255" value="177" class="flex-1 h-1.5 bg-[#2a2a32] rounded-lg appearance-none cursor-pointer accent-red-400">
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <span class="text-[9px] font-bold text-green-400 w-3">G</span>
-                            <input type="range" id="slider-g" min="0" max="255" value="62" class="flex-1 h-1.5 bg-[#2a2a32] rounded-lg appearance-none cursor-pointer accent-green-400">
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <span class="text-[9px] font-bold text-blue-400 w-3">B</span>
-                            <input type="range" id="slider-b" min="0" max="255" value="83" class="flex-1 h-1.5 bg-[#2a2a32] rounded-lg appearance-none cursor-pointer accent-blue-400">
-                        </div>
-                        <button id="btn-add-to-palette" class="w-full mt-1 bg-panel hover:bg-[#2a2a32] border border-border text-gray-400 hover:text-white py-1 rounded text-[10px] font-bold uppercase transition-all shadow-sm"><i class="fa-solid fa-plus text-accent"></i> Add to Palette</button>
-                    </div>
                 </div>
                 
-                <!-- Palette -->
-                <div class="p-4 flex-1 overflow-y-auto border-b border-border min-h-0 custom-scrollbar">
-                    <div class="flex items-center justify-between mb-3">
-                        <h2 class="text-[11px] font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2"><i class="fa-solid fa-swatchbook"></i> Palette</h2>
-                        <div class="flex gap-1">
-                            <button id="btn-load-palette" class="bg-panel border border-border px-1.5 py-1 rounded text-[9px] font-bold uppercase text-gray-400 hover:text-white transition-all shadow-sm" title="Load .pal File"><i class="fa-solid fa-folder-open"></i></button>
-                            <input type="file" id="palette-load" accept=".pal" class="hidden">
-                            <button id="btn-save-palette" class="bg-panel border border-border px-1.5 py-1 rounded text-[9px] font-bold uppercase text-gray-400 hover:text-white transition-all shadow-sm" title="Save .pal File"><i class="fa-solid fa-download"></i></button>
+                <!-- Palette + RGB Mixer -->
+                <div class="flex flex-col flex-1 min-h-0 border-b border-border">
+                    <!-- RGB Sliders -->
+                    <div class="p-3 bg-[#18181d] border-b border-border shrink-0">
+                        <div class="flex items-center justify-between mb-2">
+                            <h2 class="text-[11px] font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2"><i class="fa-solid fa-sliders"></i> RGB Mixer</h2>
+                            <button id="btn-add-to-palette" class="flex items-center gap-1 bg-accent/20 hover:bg-accent/40 border border-accent/40 text-accent hover:text-white px-2 py-1 rounded text-[9px] font-bold uppercase transition-all"><i class="fa-solid fa-plus"></i> Add</button>
+                        </div>
+                        <div class="flex flex-col gap-1.5">
+                            <div class="flex items-center gap-2">
+                                <span class="text-[9px] font-bold text-red-400 w-3">R</span>
+                                <input type="range" id="slider-r" min="0" max="255" value="177" class="flex-1 h-1.5 bg-[#2a2a32] rounded-lg appearance-none cursor-pointer accent-red-400">
+                                <span id="val-r" class="text-[9px] font-mono text-gray-400 w-6 text-right">177</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-[9px] font-bold text-green-400 w-3">G</span>
+                                <input type="range" id="slider-g" min="0" max="255" value="62" class="flex-1 h-1.5 bg-[#2a2a32] rounded-lg appearance-none cursor-pointer accent-green-400">
+                                <span id="val-g" class="text-[9px] font-mono text-gray-400 w-6 text-right">62</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-[9px] font-bold text-blue-400 w-3">B</span>
+                                <input type="range" id="slider-b" min="0" max="255" value="83" class="flex-1 h-1.5 bg-[#2a2a32] rounded-lg appearance-none cursor-pointer accent-blue-400">
+                                <span id="val-b" class="text-[9px] font-mono text-gray-400 w-6 text-right">83</span>
+                            </div>
                         </div>
                     </div>
-                    <div id="palette-grid" class="grid grid-cols-5 gap-2 pb-6"></div>
+                    <!-- Palette Grid -->
+                    <div class="p-3 flex flex-col flex-1 min-h-0">
+                        <div class="flex items-center justify-between mb-2">
+                            <h2 class="text-[11px] font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2"><i class="fa-solid fa-swatchbook"></i> Palette</h2>
+                            <div class="flex gap-1">
+                                <button id="btn-load-palette" class="bg-panel border border-border px-1.5 py-1 rounded text-[9px] font-bold uppercase text-gray-400 hover:text-white transition-all shadow-sm" title="Load .pal File"><i class="fa-solid fa-folder-open"></i></button>
+                                <input type="file" id="palette-load" accept=".pal" class="hidden">
+                                <button id="btn-save-palette" class="bg-panel border border-border px-1.5 py-1 rounded text-[9px] font-bold uppercase text-gray-400 hover:text-white transition-all shadow-sm" title="Save .pal File"><i class="fa-solid fa-download"></i></button>
+                            </div>
+                        </div>
+                        <div id="palette-grid" class="grid grid-cols-5 gap-2 overflow-y-auto flex-1 pb-2 custom-scrollbar"></div>
+                    </div>
                 </div>
 
                 <!-- Transform -->
@@ -1011,9 +1022,9 @@
             E('color-picker').addEventListener('input', e => setColor(e.target.value));
             E('color-picker-sec').addEventListener('input', e => { currentColorSec = e.target.value; updateColorHistory(e.target.value); });
             toolButtons.forEach(b => b.addEventListener('click', () => setTool(b.dataset.tool)));
-            const updateFromRGB = () => { const r=parseInt(E('slider-r').value), g=parseInt(E('slider-g').value), b=parseInt(E('slider-b').value); setColor("#"+(1<<24|r<<16|g<<8|b).toString(16).slice(1)); };
+            const updateFromRGB = () => { const r=parseInt(E('slider-r').value), g=parseInt(E('slider-g').value), b=parseInt(E('slider-b').value); if(E('val-r')) E('val-r').textContent=r; if(E('val-g')) E('val-g').textContent=g; if(E('val-b')) E('val-b').textContent=b; setColor("#"+(1<<24|r<<16|g<<8|b).toString(16).slice(1)); };
             if(E('slider-r')) { E('slider-r').addEventListener('input', updateFromRGB); E('slider-g').addEventListener('input', updateFromRGB); E('slider-b').addEventListener('input', updateFromRGB); }
-            if(E('btn-add-to-palette')) { E('btn-add-to-palette').addEventListener('click', () => { const hc = currentColor.toLowerCase(); const btn = E('btn-add-to-palette'); if(!RETRO_PALETTE.map(c=>c.toLowerCase()).includes(hc)) { RETRO_PALETTE.push(hc); initPalette(); E('palette-grid').parentElement.scrollTop = E('palette-grid').parentElement.scrollHeight; btn.innerHTML = '<i class="fa-solid fa-check text-green-400"></i> Added!'; setTimeout(() => btn.innerHTML = '<i class="fa-solid fa-plus text-accent"></i> Add to Palette', 1000); } else { btn.innerHTML = '<i class="fa-solid fa-exclamation text-yellow-400"></i> Exists'; setTimeout(() => btn.innerHTML = '<i class="fa-solid fa-plus text-accent"></i> Add to Palette', 1000); } }); }
+            if(E('btn-add-to-palette')) { E('btn-add-to-palette').addEventListener('click', () => { const hc = currentColor.toLowerCase(); const btn = E('btn-add-to-palette'); const resetHtml = '<i class="fa-solid fa-plus"></i> Add'; if(!RETRO_PALETTE.map(c=>c.toLowerCase()).includes(hc)) { RETRO_PALETTE.push(hc); initPalette(); E('palette-grid').scrollTop = E('palette-grid').scrollHeight; btn.innerHTML = '<i class="fa-solid fa-check text-green-400"></i> Added!'; setTimeout(() => btn.innerHTML = resetHtml, 1000); } else { btn.innerHTML = '<i class="fa-solid fa-exclamation text-yellow-400"></i> Exists'; setTimeout(() => btn.innerHTML = resetHtml, 1000); } }); }
             document.querySelectorAll('[data-size]').forEach(b => b.addEventListener('click', () => { if(confirm('Changing grid size will reset the current project. Continue?')) initGridSize(parseInt(b.dataset.size)); }));
             E('btn-clear').addEventListener('click', () => { if(confirm('Clear layer?')){commitAndClearSelection();saveState();frames[currentFrameIndex].layers[currentLayerIndex].grid=createEmptyGrid();renderMainGrid();} });
             E('btn-undo').addEventListener('click', undo); E('btn-add-frame').addEventListener('click', addFrame); E('btn-add-layer').addEventListener('click', () => { commitAndClearSelection(); saveState(); frames[currentFrameIndex].layers.push({ id:Date.now().toString(), name:`Layer ${frames[currentFrameIndex].layers.length+1}`, visible:true, opacity:1, blendMode:'normal', grid:createEmptyGrid() }); currentLayerIndex=frames[currentFrameIndex].layers.length-1; renderLayersPanel(); renderMainGrid(); });
