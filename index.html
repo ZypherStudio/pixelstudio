@@ -487,6 +487,7 @@
         let colorHistory = ['#1a1c2c', '#b13e53', '#ffffff', '#000000'];
         let isDrawing = false, lastPos = null, useSecondary = false;
         let frames = [], currentFrameIndex = 0, currentLayerIndex = 0;
+        let isPlaying = false, fps = 12, playInterval = null;
         let onionSkinning = false, onionFrames = 1, onionOpacity = 40;
         let isTileMode = false, isPixelPerfect = false, symX = false, symY = false;
         let floatingSelection = null, selectionBox = null, isSelecting = false, isMoving = false, moveStartX, moveStartY;
@@ -858,6 +859,20 @@
             document.querySelectorAll('[data-size]').forEach(b=>b.className=parseInt(b.dataset.size)===gridSize?'px-3 py-1.5 rounded-sm text-xs font-semibold bg-accent text-white shadow transition-all':'px-3 py-1.5 rounded-sm text-xs font-semibold text-gray-400 hover:text-white hover:bg-[#2a2a32] transition-colors');
             initDOMGrid(); renderTimeline(); renderLayersPanel(); renderMainGrid(); updateSymmetryUI();
         }
+
+        function togglePlay() {
+            if (frames.length < 2) return;
+            isPlaying = !isPlaying;
+            E('btn-play').innerHTML = isPlaying ? '<i class="fa-solid fa-pause"></i>' : '<i class="fa-solid fa-play"></i>';
+            if (isPlaying) {
+                playInterval = setInterval(() => {
+                    currentFrameIndex = (currentFrameIndex + 1) % frames.length;
+                    renderTimeline(); renderMainGrid(); updateSymmetryUI();
+                }, 1000 / fps);
+            } else {
+                clearInterval(playInterval);
+            }
+        }
         function exportImage(type, scale) {
             commitAndClearSelection(); const sc = scale, fs = gridSize*sc, c = document.createElement('canvas'); c.width = type==='sheet' ? fs*frames.length : fs; c.height = fs;
             const ctx = c.getContext('2d'); ctx.imageSmoothingEnabled = false;
@@ -979,6 +994,8 @@
             document.querySelectorAll('[data-size]').forEach(b => b.addEventListener('click', () => { if(confirm('Changing grid size will reset the current project. Continue?')) initGridSize(parseInt(b.dataset.size)); }));
             E('btn-clear').addEventListener('click', () => { if(confirm('Clear layer?')){commitAndClearSelection();saveState();frames[currentFrameIndex].layers[currentLayerIndex].grid=createEmptyGrid();renderMainGrid();} });
             E('btn-undo').addEventListener('click', undo); E('btn-add-frame').addEventListener('click', addFrame); E('btn-add-layer').addEventListener('click', () => { commitAndClearSelection(); saveState(); frames[currentFrameIndex].layers.push({ id:Date.now().toString(), name:`Layer ${frames[currentFrameIndex].layers.length+1}`, visible:true, opacity:1, blendMode:'normal', grid:createEmptyGrid() }); currentLayerIndex=frames[currentFrameIndex].layers.length-1; renderLayersPanel(); renderMainGrid(); });
+            E('btn-play').addEventListener('click', togglePlay);
+            E('fps-input').addEventListener('input', e => { fps = parseInt(e.target.value) || 12; if(isPlaying){ togglePlay(); togglePlay(); } });
             
             // Save/Load File
             E('btn-save-file').addEventListener('click', () => { commitAndClearSelection(); const b=new Blob([JSON.stringify({name: E('project-name').value, gridSize,fps,frames,RETRO_PALETTE})],{type:'application/json'}); const l=document.createElement('a'); l.href=URL.createObjectURL(b); l.download=`${E('project-name').value||'zpriteforge'}.pxl`; l.click(); });
