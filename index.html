@@ -198,6 +198,30 @@
                         <input type="checkbox" id="toggle-pixel-perfect" class="hidden">
                         <div class="w-8 h-4 bg-panel border border-border rounded-full relative transition-colors shadow-inner" id="pp-switch"><div class="w-3 h-3 bg-gray-500 rounded-full absolute top-[1px] left-[2px] transition-all" id="pp-knob"></div></div>
                     </label>
+
+                    <!-- Transform -->
+                    <div class="mt-3 p-2 border border-border bg-[#18181d] rounded shrink-0 flex flex-col gap-2">
+                        <h2 class="text-[9px] font-bold text-gray-500 uppercase tracking-widest flex items-center gap-1"><i class="fa-solid fa-crop-simple"></i> Transform</h2>
+                        <div class="flex items-center gap-1">
+                            <button id="btn-flip-h" class="flex-1 p-1.5 rounded bg-panel hover:bg-[#2a2a32] border border-border text-gray-400 hover:text-white transition-all text-[10px] shadow-sm" title="Flip Horizontal"><i class="fa-solid fa-arrows-left-right"></i></button>
+                            <button id="btn-flip-v" class="flex-1 p-1.5 rounded bg-panel hover:bg-[#2a2a32] border border-border text-gray-400 hover:text-white transition-all text-[10px] shadow-sm" title="Flip Vertical"><i class="fa-solid fa-arrows-up-down"></i></button>
+                            <button id="btn-rotate-90" class="flex-1 p-1.5 rounded bg-panel hover:bg-[#2a2a32] border border-border text-gray-400 hover:text-white transition-all text-[10px] shadow-sm" title="Rotate 90°"><i class="fa-solid fa-rotate-right"></i></button>
+                        </div>
+                    </div>
+
+                    <!-- Filters & Reference -->
+                    <div class="mt-3 p-2 border border-border bg-base rounded shrink-0 flex flex-col gap-2">
+                        <button id="btn-hsv" class="flex items-center justify-center gap-2 w-full p-2 rounded bg-panel hover:bg-[#2a2a32] border border-border transition-all text-[9px] font-bold uppercase group text-gray-300"><i class="fa-solid fa-sliders text-accent group-hover:text-white"></i> Color Filters</button>
+                        <div class="flex items-center justify-between mt-1">
+                            <span class="text-[9px] font-bold text-gray-500 uppercase tracking-widest flex items-center gap-1"><i class="fa-solid fa-image"></i> Ref Image</span>
+                            <div class="flex items-center gap-1">
+                                <button id="btn-load-ref" class="bg-panel border border-border px-1.5 py-1 rounded text-[8px] font-bold uppercase text-gray-400 hover:text-white transition-all shadow-sm">Load</button>
+                                <input type="file" id="ref-image-input" class="hidden" accept="image/*">
+                                <button id="btn-clear-ref" class="w-5 h-5 flex items-center justify-center bg-panel border border-border rounded text-red-400 hover:text-red-300 hidden"><i class="fa-solid fa-trash text-[8px]"></i></button>
+                            </div>
+                        </div>
+                        <input type="range" id="ref-opacity" min="0" max="100" value="30" class="w-full mt-1 hidden accent-accent h-1 bg-border rounded appearance-none">
+                    </div>
                 </div>
             </aside>
 
@@ -286,30 +310,6 @@
                         </div>
                         <div id="palette-grid" class="grid grid-cols-5 gap-2 overflow-y-auto flex-1 pb-2 custom-scrollbar"></div>
                     </div>
-                </div>
-
-                <!-- Transform -->
-                <div class="p-3 border-b border-border bg-[#18181d] shrink-0 flex flex-col gap-2">
-                    <h2 class="text-[11px] font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2"><i class="fa-solid fa-crop-simple"></i> Transform</h2>
-                    <div class="flex items-center gap-1">
-                        <button id="btn-flip-h" class="flex-1 p-1.5 rounded bg-panel hover:bg-[#2a2a32] border border-border text-gray-400 hover:text-white transition-all text-xs shadow-sm" title="Flip Horizontal"><i class="fa-solid fa-arrows-left-right"></i></button>
-                        <button id="btn-flip-v" class="flex-1 p-1.5 rounded bg-panel hover:bg-[#2a2a32] border border-border text-gray-400 hover:text-white transition-all text-xs shadow-sm" title="Flip Vertical"><i class="fa-solid fa-arrows-up-down"></i></button>
-                        <button id="btn-rotate-90" class="flex-1 p-1.5 rounded bg-panel hover:bg-[#2a2a32] border border-border text-gray-400 hover:text-white transition-all text-xs shadow-sm" title="Rotate 90°"><i class="fa-solid fa-rotate-right"></i></button>
-                    </div>
-                </div>
-
-                <!-- Filters & Reference -->
-                <div class="p-3 border-b border-border bg-base shrink-0 flex flex-col gap-2">
-                    <button id="btn-hsv" class="flex items-center justify-center gap-2 w-full p-2 rounded bg-panel hover:bg-[#2a2a32] border border-border transition-all text-[10px] font-bold uppercase group text-gray-300"><i class="fa-solid fa-sliders text-accent group-hover:text-white"></i> Color Filters</button>
-                    <div class="flex items-center justify-between mt-1">
-                        <span class="text-[10px] font-bold text-gray-500 uppercase tracking-widest flex items-center gap-1"><i class="fa-solid fa-image"></i> Ref Image</span>
-                        <div class="flex items-center gap-1">
-                            <button id="btn-load-ref" class="bg-panel border border-border px-2 py-1 rounded text-[9px] font-bold uppercase text-gray-400 hover:text-white transition-all shadow-sm">Load</button>
-                            <input type="file" id="ref-image-input" class="hidden" accept="image/*">
-                            <button id="btn-clear-ref" class="w-6 h-6 flex items-center justify-center bg-panel border border-border rounded text-red-400 hover:text-red-300 hidden"><i class="fa-solid fa-trash text-[9px]"></i></button>
-                        </div>
-                    </div>
-                    <input type="range" id="ref-opacity" min="0" max="100" value="30" class="w-full mt-1 hidden accent-accent h-1 bg-border rounded appearance-none">
                 </div>
 
                 <!-- Layers Panel -->
