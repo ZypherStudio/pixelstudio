@@ -830,18 +830,25 @@
                     }
                 };
 
-                const top = document.createElement('div'); top.className = 'flex items-center justify-between w-full pointer-events-none';
-                const ls = document.createElement('div'); ls.className = 'flex items-center gap-2 overflow-hidden pointer-events-auto';
+                const top = document.createElement('div'); top.className = 'flex items-center justify-between w-full pointer-events-none gap-2';
+                const ls = document.createElement('div'); ls.className = 'flex items-center gap-2 overflow-hidden pointer-events-auto flex-1';
                 const eye = document.createElement('button'); eye.innerHTML=`<i class="fa-solid ${l.visible?'fa-eye text-gray-300':'fa-eye-slash text-gray-600'} text-xs"></i>`; eye.onclick=e=>{e.stopPropagation();saveState();l.visible=!l.visible;renderLayersPanel();renderMainGrid();};
-                const nm = document.createElement('span'); nm.className=`text-[10px] font-semibold truncate ${aI===currentLayerIndex?'text-white':'text-gray-400'}`; nm.textContent=l.name;
-                ls.appendChild(eye); ls.appendChild(nm); top.appendChild(ls);
-                if (fr.layers.length>1) { const del=document.createElement('button'); del.innerHTML='<i class="fa-solid fa-trash text-[9px]"></i>'; del.className='text-gray-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all pointer-events-auto'; d.classList.add('group'); del.onclick=e=>{e.stopPropagation();commitAndClearSelection();saveState();fr.layers.splice(aI,1);if(currentLayerIndex>=fr.layers.length)currentLayerIndex=fr.layers.length-1;renderLayersPanel();renderMainGrid();}; top.appendChild(del); }
+                
+                const thumbCvs = document.createElement('canvas');
+                thumbCvs.width = gridSize; thumbCvs.height = gridSize;
+                thumbCvs.className = 'w-7 h-7 shrink-0 bg-panel border border-[#3a3a44] rounded-[3px] pixelated-render checkered-bg-small shadow-sm';
+                const tCtx = thumbCvs.getContext('2d');
+                for(let y=0;y<gridSize;y++) for(let x=0;x<gridSize;x++) if(l.grid[y][x]){ tCtx.fillStyle=l.grid[y][x]; tCtx.fillRect(x,y,1,1); }
+                
+                const nm = document.createElement('span'); nm.className=`text-[11px] font-semibold truncate ${aI===currentLayerIndex?'text-white':'text-gray-400'}`; nm.textContent=l.name;
+                ls.appendChild(eye); ls.appendChild(thumbCvs); ls.appendChild(nm); top.appendChild(ls);
+                if (fr.layers.length>1) { const del=document.createElement('button'); del.innerHTML='<i class="fa-solid fa-trash text-[10px]"></i>'; del.className='text-gray-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all pointer-events-auto w-5 h-5 flex items-center justify-center shrink-0'; d.classList.add('group'); del.onclick=e=>{e.stopPropagation();commitAndClearSelection();saveState();fr.layers.splice(aI,1);if(currentLayerIndex>=fr.layers.length)currentLayerIndex=fr.layers.length-1;renderLayersPanel();renderMainGrid();}; top.appendChild(del); }
                 d.appendChild(top); d.onclick=()=>{commitAndClearSelection();currentLayerIndex=aI;renderLayersPanel();};
                 
                 if (aI === currentLayerIndex) {
                     const setDiv = document.createElement('div'); setDiv.className='flex items-center gap-2 mt-2 w-full pt-2 border-t border-border/50 pointer-events-auto';
                     const opIn = document.createElement('input'); opIn.type='range'; opIn.min='0'; opIn.max='100'; opIn.value=l.opacity*100; opIn.className='flex-1 h-1 bg-[#2a2a32] rounded appearance-none cursor-pointer accent-white'; opIn.onclick=e=>e.stopPropagation(); opIn.oninput=e=>{l.opacity=e.target.value/100;renderMainGrid();};
-                    const mdSel = document.createElement('select'); mdSel.className='bg-base border border-border text-[9px] text-gray-300 rounded px-1 py-0.5 outline-none font-bold uppercase cursor-pointer'; ['normal','multiply','screen','add'].forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=m;if(l.blendMode===m)o.selected=true;mdSel.appendChild(o);}); mdSel.onclick=e=>e.stopPropagation(); mdSel.onchange=e=>{l.blendMode=e.target.value;renderMainGrid();};
+                    const mdSel = document.createElement('select'); mdSel.className='bg-base border border-border text-[9px] text-gray-300 rounded px-1 py-0.5 outline-none font-bold uppercase cursor-pointer'; ['normal','multiply','screen','color-dodge'].forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=m;if(l.blendMode===m)o.selected=true;mdSel.appendChild(o);}); mdSel.onclick=e=>e.stopPropagation(); mdSel.onchange=e=>{l.blendMode=e.target.value;renderMainGrid();};
                     setDiv.appendChild(opIn); setDiv.appendChild(mdSel); d.appendChild(setDiv);
                 } list.appendChild(d);
             });
