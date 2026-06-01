@@ -95,7 +95,10 @@
             </div>
             <div class="w-px h-6 bg-border mx-1"></div>
             
-            <div class="flex gap-2">
+            <div class="flex gap-2 items-center">
+                <button id="btn-quick-png" class="flex items-center gap-1.5 bg-[#18181d] hover:bg-[#2a2a32] text-gray-300 hover:text-white px-3 py-1.5 rounded-sm text-xs font-bold uppercase transition-all shadow-sm border border-border" title="Quick Export PNG"><i class="fa-solid fa-image text-[#2d8a4e]"></i> PNG</button>
+                <button id="btn-quick-gif" class="flex items-center gap-1.5 bg-[#18181d] hover:bg-[#2a2a32] text-gray-300 hover:text-white px-3 py-1.5 rounded-sm text-xs font-bold uppercase transition-all shadow-sm border border-border" title="Quick Export GIF"><i class="fa-solid fa-film text-[#9b59b6]"></i> GIF</button>
+                <div class="w-px h-6 bg-border mx-1"></div>
                 <button id="btn-export-options" class="flex items-center gap-2 bg-[#d95232] hover:bg-[#eb5c38] text-white px-3 py-1.5 rounded text-xs font-bold uppercase tracking-wider transition-all shadow-md border border-[#e8603f]/50" title="Export Options"><i class="fa-solid fa-share-from-square"></i> Export</button>
                 <button id="btn-shortcuts" class="flex items-center justify-center w-8 h-8 bg-[#18181d] hover:bg-[#2a2a32] text-gray-400 hover:text-white rounded border border-border transition-colors shadow-sm" title="Shortcuts (?)"><i class="fa-solid fa-keyboard"></i></button>
             </div>
@@ -319,15 +322,6 @@
                         </div>
                     </div>
                     <div id="layers-list" class="flex flex-col gap-1.5 overflow-y-auto flex-1 pr-1 pb-1 custom-scrollbar"></div>
-                </div>
-
-                <!-- Quick Export -->
-                <div class="p-3 bg-base shrink-0">
-                    <h2 class="text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-2 flex items-center gap-2"><i class="fa-solid fa-bolt text-accent"></i> Quick Export</h2>
-                    <div class="flex gap-2">
-                        <button id="btn-quick-png" class="flex-1 flex items-center justify-center gap-1.5 p-1.5 rounded bg-panel hover:bg-[#2a2a32] border border-border transition-all text-[10px] font-bold uppercase text-white shadow-sm"><i class="fa-solid fa-image text-[#2d8a4e]"></i> PNG</button>
-                        <button id="btn-quick-gif" class="flex-1 flex items-center justify-center gap-1.5 p-1.5 rounded bg-panel hover:bg-[#2a2a32] border border-border transition-all text-[10px] font-bold uppercase text-white shadow-sm"><i class="fa-solid fa-film text-[#9b59b6]"></i> GIF</button>
-                    </div>
                 </div>
             </aside>
         </div>
