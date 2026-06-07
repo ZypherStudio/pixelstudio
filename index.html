@@ -397,7 +397,10 @@
                         </div>
                     </div>
                 </div>
-                <button id="btn-add-frame" class="text-[10px] font-bold uppercase tracking-wider bg-[#3a4b6c] hover:bg-accent text-white px-3 py-1 rounded transition-colors shadow-sm flex items-center gap-2 border border-[#4a5b7c]"><i class="fa-solid fa-plus"></i> New Frame</button>
+                <div class="flex items-center gap-2">
+                    <button id="btn-dup-frame" class="text-[10px] font-bold uppercase tracking-wider bg-[#2a2a32] hover:bg-[#3f3f4a] text-gray-300 px-3 py-1 rounded transition-colors shadow-sm flex items-center gap-2 border border-border" title="Duplicate current frame"><i class="fa-solid fa-copy"></i> Dup</button>
+                    <button id="btn-add-frame" class="text-[10px] font-bold uppercase tracking-wider bg-[#3a4b6c] hover:bg-accent text-white px-3 py-1 rounded transition-colors shadow-sm flex items-center gap-2 border border-[#4a5b7c]"><i class="fa-solid fa-plus"></i> New Frame</button>
+                </div>
             </div>
             <div class="flex-1 flex items-center px-4 gap-3 overflow-x-auto bg-base" id="timeline-frames"></div>
         </footer>
@@ -715,6 +718,7 @@
         }
 
         function applyBurnDodge(x, y, mode) {
+            if (isTileMode) { x = (x % gridSize + gridSize) % gridSize; y = (y % gridSize + gridSize) % gridSize; }
             const l = frames[currentFrameIndex].layers[currentLayerIndex]; if(!l.visible || x<0||x>=gridSize||y<0||y>=gridSize || !l.grid[y][x]) return;
             const rgb = hexToRgb(l.grid[y][x]), hsl = hexToHSL("#"+[rgb.r,rgb.g,rgb.b].map(v=>v.toString(16).padStart(2,'0')).join(''));
             if(mode==='burn') hsl.l=Math.max(0,hsl.l-5); else hsl.l=Math.min(100,hsl.l+5); l.grid[y][x] = HSLToHex(hsl.h, hsl.s, hsl.l); renderMainGrid();
@@ -752,7 +756,10 @@
             }
         }
 
-        function setPixel(x, y, col) { const l = frames[currentFrameIndex].layers[currentLayerIndex]; if(!l.visible||x<0||x>=gridSize||y<0||y>=gridSize)return; if(l.grid[y][x]===col)return; l.grid[y][x]=col; renderMainGrid(); }
+        function setPixel(x, y, col) { 
+            if (isTileMode) { x = (x % gridSize + gridSize) % gridSize; y = (y % gridSize + gridSize) % gridSize; }
+            const l = frames[currentFrameIndex].layers[currentLayerIndex]; if(!l.visible||x<0||x>=gridSize||y<0||y>=gridSize)return; if(l.grid[y][x]===col)return; l.grid[y][x]=col; renderMainGrid(); 
+        }
         function floodFill(sx, sy, col) { const l = frames[currentFrameIndex].layers[currentLayerIndex]; if(!l.visible)return; const tc = l.grid[sy][sx]; if(tc===col)return; const st=[[sx,sy]]; while(st.length>0){const[x,y]=st.pop(); if(x<0||x>=gridSize||y<0||y>=gridSize||l.grid[y][x]!==tc)continue; l.grid[y][x]=col; st.push([x+1,y],[x-1,y],[x,y+1],[x,y-1]);} renderMainGrid(); }
 
         function commitAndClearSelection() { if (floatingSelection) commitSelection(); selectionBox = null; updateSelectionOverlay(); }
@@ -872,6 +879,14 @@
 
         // Frames / Timeline
         function addFrame() { commitAndClearSelection(); saveState(); frames.push({ id: Date.now().toString(), layers: [{ id: Date.now().toString()+'l', name: 'Layer 1', visible: true, opacity: 1, blendMode: 'normal', grid: createEmptyGrid() }] }); currentFrameIndex = frames.length-1; currentLayerIndex = 0; renderTimeline(); renderLayersPanel(); renderMainGrid(); const tl=E('timeline-frames'); setTimeout(()=>tl.scrollLeft=tl.scrollWidth, 50); }
+        function duplicateFrame() {
+            if (isPlaying) togglePlay();
+            commitAndClearSelection(); saveState();
+            const f = frames[currentFrameIndex];
+            frames.splice(currentFrameIndex + 1, 0, {id: Date.now().toString(), layers: f.layers.map(l => ({...l, id: Date.now().toString()+Math.random(), grid: JSON.parse(JSON.stringify(l.grid))}))});
+            currentFrameIndex++;
+            renderTimeline(); renderLayersPanel(); renderMainGrid();
+        }
         function renderTimeline() {
             const tl = E('timeline-frames'); tl.innerHTML = '';
             frames.forEach((f, idx) => {
@@ -1112,7 +1127,10 @@
             if(E('btn-return-home')) { E('btn-return-home').addEventListener('click', () => { E('welcome-modal').classList.remove('hidden'); }); }
             document.querySelectorAll('[data-size]').forEach(b => b.addEventListener('click', () => { if(confirm('Changing grid size will reset the current project. Continue?')) initGridSize(parseInt(b.dataset.size)); }));
             E('btn-clear').addEventListener('click', () => { if(confirm('Clear layer?')){commitAndClearSelection();saveState();frames[currentFrameIndex].layers[currentLayerIndex].grid=createEmptyGrid();renderMainGrid();} });
-            E('btn-undo').addEventListener('click', undo); E('btn-add-frame').addEventListener('click', addFrame); E('btn-add-layer').addEventListener('click', () => { commitAndClearSelection(); saveState(); frames[currentFrameIndex].layers.push({ id:Date.now().toString(), name:`Layer ${frames[currentFrameIndex].layers.length+1}`, visible:true, opacity:1, blendMode:'normal', grid:createEmptyGrid() }); currentLayerIndex=frames[currentFrameIndex].layers.length-1; renderLayersPanel(); renderMainGrid(); });
+            E('btn-undo').addEventListener('click', undo); 
+            E('btn-add-frame').addEventListener('click', addFrame); 
+            E('btn-dup-frame').addEventListener('click', duplicateFrame);
+            E('btn-add-layer').addEventListener('click', () => { commitAndClearSelection(); saveState(); frames[currentFrameIndex].layers.push({ id:Date.now().toString(), name:`Layer ${frames[currentFrameIndex].layers.length+1}`, visible:true, opacity:1, blendMode:'normal', grid:createEmptyGrid() }); currentLayerIndex=frames[currentFrameIndex].layers.length-1; renderLayersPanel(); renderMainGrid(); });
             E('btn-play').addEventListener('click', togglePlay);
             if(E('btn-tl-play')) E('btn-tl-play').addEventListener('click', togglePlay);
             if(E('btn-tl-prev')) E('btn-tl-prev').addEventListener('click', () => { currentFrameIndex = (currentFrameIndex - 1 + frames.length) % frames.length; renderTimeline(); renderMainGrid(); updateSymmetryUI(); });
@@ -1131,6 +1149,18 @@
             // Import Image
             E('btn-import-png').addEventListener('click', () => E('file-import-png').click());
             E('btn-import-image').addEventListener('click', () => { E('welcome-modal').classList.add('hidden'); E('file-import-png').click(); });
+            E('toggle-onion').addEventListener('change', e => {
+                onionSkinning = e.target.checked;
+                E('onion-knob').style.transform = onionSkinning ? 'translateX(10px)' : 'translateX(0)';
+                E('onion-switch').style.backgroundColor = onionSkinning ? 'var(--accent)' : 'var(--bg-base)';
+                renderMainGrid();
+            });
+            E('toggle-tile').addEventListener('change', e => {
+                isTileMode = e.target.checked;
+                E('tile-knob').style.transform = isTileMode ? 'translateX(10px)' : 'translateX(0)';
+                E('tile-switch').style.backgroundColor = isTileMode ? 'var(--accent)' : 'var(--bg-base)';
+                renderMainGrid();
+            });
             E('file-import-png').addEventListener('change', e => {
                 const f = e.target.files[0]; if(!f) return;
                 const r = new FileReader();
