@@ -69,9 +69,17 @@
         .color-swatch:hover { transform: scale(1.08); }
         .color-swatch.active { border-color: #ffffff; transform: scale(1.15); box-shadow: 0 0 12px rgba(255,255,255,0.2), inset 0 2px 4px rgba(0,0,0,0.3); z-index: 10; }
         .pixelated-render { image-rendering: pixelated; image-rendering: crisp-edges; }
+        .custom-scrollbar { scrollbar-width: thin; scrollbar-color: var(--border-color) transparent; }
         ::-webkit-scrollbar { width: 6px; height: 6px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; } ::-webkit-scrollbar-thumb:hover { background: #3f3f4a; }
         input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; } input[type="color"]::-webkit-color-swatch { border: none; }
         input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        @media (max-width: 1024px) {
+            main > div.flex { flex-direction: column !important; overflow-y: auto !important; overflow-x: hidden !important; }
+            aside { width: 100% !important; border-right: none !important; border-left: none !important; border-bottom: 1px solid var(--border-color); flex: none !important; }
+            #canvas-container { margin: 20px auto; max-width: 95%; }
+            section.flex-1 { min-height: 400px; overflow: visible !important; }
+            header { flex-wrap: wrap; height: auto !important; padding: 10px; gap: 10px; justify-content: center; }
+        }
     </style>
 </head>
 <body class="h-screen w-screen flex flex-col font-sans text-sm antialiased">
@@ -244,6 +252,15 @@
                             <button id="btn-flip-h" class="flex-1 p-1.5 rounded bg-panel hover:bg-[#2a2a32] border border-border text-gray-400 hover:text-white transition-all text-[10px] shadow-sm" title="Flip Horizontal"><i class="fa-solid fa-arrows-left-right"></i></button>
                             <button id="btn-flip-v" class="flex-1 p-1.5 rounded bg-panel hover:bg-[#2a2a32] border border-border text-gray-400 hover:text-white transition-all text-[10px] shadow-sm" title="Flip Vertical"><i class="fa-solid fa-arrows-up-down"></i></button>
                             <button id="btn-rotate-90" class="flex-1 p-1.5 rounded bg-panel hover:bg-[#2a2a32] border border-border text-gray-400 hover:text-white transition-all text-[10px] shadow-sm" title="Rotate 90°"><i class="fa-solid fa-rotate-right"></i></button>
+                        </div>
+                        <div class="flex flex-col items-center gap-1 mt-1 bg-panel border border-border p-1 rounded">
+                            <button id="btn-shift-up" class="w-full p-1 rounded hover:bg-[#2a2a32] text-gray-400 hover:text-white transition-all text-[10px]" title="Shift Pixels Up"><i class="fa-solid fa-chevron-up"></i></button>
+                            <div class="flex items-center w-full gap-1">
+                                <button id="btn-shift-left" class="flex-1 p-1 rounded hover:bg-[#2a2a32] text-gray-400 hover:text-white transition-all text-[10px]" title="Shift Pixels Left"><i class="fa-solid fa-chevron-left"></i></button>
+                                <span class="text-[8px] text-gray-600 font-bold uppercase tracking-wider">Shift</span>
+                                <button id="btn-shift-right" class="flex-1 p-1 rounded hover:bg-[#2a2a32] text-gray-400 hover:text-white transition-all text-[10px]" title="Shift Pixels Right"><i class="fa-solid fa-chevron-right"></i></button>
+                            </div>
+                            <button id="btn-shift-down" class="w-full p-1 rounded hover:bg-[#2a2a32] text-gray-400 hover:text-white transition-all text-[10px]" title="Shift Pixels Down"><i class="fa-solid fa-chevron-down"></i></button>
                         </div>
                     </div>
 
@@ -772,10 +789,24 @@
         }
 
         // Transform Functions
-        function flipLayer(horizontal) {
+        function shiftPixels(dx, dy) {
+            commitAndClearSelection(); saveState();
+            const l = frames[currentFrameIndex].layers[currentLayerIndex];
+            const newGrid = createEmptyGrid();
+            for(let y=0; y<gridSize; y++) {
+                for(let x=0; x<gridSize; x++) {
+                    const nx = (x - dx + gridSize) % gridSize;
+                    const ny = (y - dy + gridSize) % gridSize;
+                    if(l.grid[ny] && l.grid[ny][nx]) newGrid[y][x] = l.grid[ny][nx];
+                }
+            }
+            l.grid = newGrid; renderMainGrid(); renderLayersPanel();
+        }
+        function flipLayer(axis) {
             saveState();
             const l = frames[currentFrameIndex].layers[currentLayerIndex];
             const newGrid = createEmptyGrid();
+            const horizontal = (axis === 'h');
             for (let y=0; y<gridSize; y++) {
                 for (let x=0; x<gridSize; x++) {
                     const ny = horizontal ? y : gridSize - 1 - y;
@@ -1150,9 +1181,13 @@
             });
 
             // Transform Events
-            E('btn-flip-h').addEventListener('click', () => flipLayer(true));
-            E('btn-flip-v').addEventListener('click', () => flipLayer(false));
-            E('btn-rotate-90').addEventListener('click', () => rotateLayer());
+            E('btn-flip-h').addEventListener('click', () => flipLayer('h'));
+            E('btn-flip-v').addEventListener('click', () => flipLayer('v'));
+            E('btn-rotate-90').addEventListener('click', rotateLayer);
+            E('btn-shift-up').addEventListener('click', () => shiftPixels(0, -1));
+            E('btn-shift-down').addEventListener('click', () => shiftPixels(0, 1));
+            E('btn-shift-left').addEventListener('click', () => shiftPixels(-1, 0));
+            E('btn-shift-right').addEventListener('click', () => shiftPixels(1, 0));
 
             E('btn-save-palette').addEventListener('click', () => {
                 let pal = "JASC-PAL\n0100\n" + RETRO_PALETTE.length + "\n";
