@@ -134,16 +134,19 @@
             </button>
             <div class="w-px h-6 bg-border mx-1"></div>
 
-            <div class="flex items-center bg-base rounded border border-border p-0.5">
-                <button class="px-3 py-1.5 rounded-sm text-xs font-semibold text-gray-400 hover:text-white transition-colors" data-size="16">16px</button>
-                <button class="px-3 py-1.5 rounded-sm text-xs font-semibold bg-accent text-white shadow" data-size="32">32px</button>
-                <button class="px-3 py-1.5 rounded-sm text-xs font-semibold text-gray-400 hover:text-white transition-colors" data-size="64">64px</button>
+            <div class="flex items-center bg-[#18181d] rounded border border-border p-1 gap-1">
+                <span class="text-[10px] text-gray-500 font-bold ml-1">W</span>
+                <input type="number" id="input-canvas-w" value="32" min="1" max="256" class="w-10 bg-base text-white text-xs p-1 rounded border border-border outline-none focus:border-accent text-center" />
+                <span class="text-[10px] text-gray-500 font-bold ml-1">H</span>
+                <input type="number" id="input-canvas-h" value="32" min="1" max="256" class="w-10 bg-base text-white text-xs p-1 rounded border border-border outline-none focus:border-accent text-center" />
+                <button id="btn-resize-canvas" class="ml-1 px-2 py-1 rounded-sm text-xs font-bold bg-[#3a4b6c] hover:bg-accent text-white shadow transition-colors uppercase" title="Apply New Size (Resets project)">Apply</button>
             </div>
             <div class="w-px h-6 bg-border mx-1"></div>
             
             <div class="flex gap-2 items-center">
                 <button id="btn-quick-png" class="flex items-center gap-1.5 bg-[#18181d] hover:bg-[#2a2a32] text-gray-300 hover:text-white px-3 py-1.5 rounded-sm text-xs font-bold uppercase transition-all shadow-sm border border-border" title="Quick Export PNG"><i class="fa-solid fa-image text-[#2d8a4e]"></i> PNG</button>
                 <button id="btn-quick-gif" class="flex items-center gap-1.5 bg-[#18181d] hover:bg-[#2a2a32] text-gray-300 hover:text-white px-3 py-1.5 rounded-sm text-xs font-bold uppercase transition-all shadow-sm border border-border" title="Quick Export GIF"><i class="fa-solid fa-film text-[#9b59b6]"></i> GIF</button>
+                <button id="btn-quick-sheet" class="flex items-center gap-1.5 bg-[#18181d] hover:bg-[#2a2a32] text-gray-300 hover:text-white px-3 py-1.5 rounded-sm text-xs font-bold uppercase transition-all shadow-sm border border-border" title="Quick Export Spritesheet"><i class="fa-solid fa-border-all text-accent"></i> Sheet</button>
                 <div class="w-px h-6 bg-border mx-1"></div>
                 <button id="btn-export-options" class="flex items-center gap-2 bg-[#d95232] hover:bg-[#eb5c38] text-white px-3 py-1.5 rounded text-xs font-bold uppercase tracking-wider transition-all shadow-md border border-[#e8603f]/50" title="Export Options"><i class="fa-solid fa-share-from-square"></i> Export</button>
                 <button id="btn-shortcuts" class="flex items-center justify-center w-8 h-8 bg-[#18181d] hover:bg-[#2a2a32] text-gray-400 hover:text-white rounded border border-border transition-colors shadow-sm" title="Shortcuts (?)"><i class="fa-solid fa-keyboard"></i></button>
@@ -297,10 +300,19 @@
             </section>
 
             <!-- Right Panel -->
-            <aside class="w-[280px] bg-panel border-l border-border flex flex-col shrink-0 z-20 shadow-xl overflow-y-auto custom-scrollbar">
+            <aside class="w-[320px] bg-panel border-l border-border flex flex-col shrink-0 z-20 shadow-xl overflow-y-auto custom-scrollbar">
                 <!-- Color & Shading -->
                 <div class="p-4 border-b border-border bg-[#18181d] shrink-0">
-                    <h2 class="text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-3 flex items-center justify-between"><span><i class="fa-solid fa-palette"></i> Colors</span> <span class="text-[8px] opacity-60">Alt+Click to Pick</span></h2>
+                    <div class="flex items-center justify-between mb-3">
+                        <h2 class="text-[11px] font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2"><span><i class="fa-solid fa-palette"></i> Colors</span></h2>
+                        <select id="color-palette-select" class="bg-base text-gray-300 text-[10px] p-1 rounded border border-border outline-none focus:border-accent">
+                            <option value="custom">Custom Palette</option>
+                            <option value="gameboy">GameBoy</option>
+                            <option value="nes">NES</option>
+                            <option value="pico8">PICO-8</option>
+                            <option value="vaporwave">Vaporwave</option>
+                        </select>
+                    </div>
                     <div class="flex gap-2 mb-3">
                         <div class="bg-base p-2 rounded border border-border flex-1 flex flex-col items-center shadow-inner relative group cursor-pointer" onclick="document.getElementById('color-picker').click()">
                             <div class="text-[8px] uppercase text-gray-500 mb-1 font-bold">Primary (L)</div>
@@ -581,7 +593,7 @@
     <script>
         let appMode = 'drawing';
         let showGridOverlay = false;
-        const MAX_UNDO = 30; let gridSize = 32, currentColor = '#b13e53', currentColorSec = '#000000', currentTool = 'pen'; 
+        const MAX_UNDO = 30; let gridWidth = 32, gridHeight = 32, currentColor = '#b13e53', currentColorSec = '#000000', currentTool = 'pen'; 
         let colorHistory = ['#1a1c2c', '#b13e53', '#ffffff', '#000000'];
         let isDrawing = false, lastPos = null, useSecondary = false;
         let frames = [], currentFrameIndex = 0, currentLayerIndex = 0;
@@ -594,7 +606,15 @@
         let brushSize = 1, brushShape = 'square';
         let hsvBackup = null;
 
-        const RETRO_PALETTE = ['#121214', '#1a1c2c', '#5d275d', '#b13e53', '#ef7d57', '#ffcd75', '#a7f070', '#38b764', '#257179', '#29366f', '#3b5dc9', '#41a6f6', '#73eff7', '#f4f4f4', '#94b0c2', '#566c86', '#333c57', '#000000', '#ffffff', '#eab308'];
+        const PREMADE_PALETTES = {
+            custom: [],
+            gameboy: ['#0f380f', '#306230', '#8bac0f', '#9bbc0f'],
+            nes: ['#7c7c7c', '#0000fc', '#0000bc', '#4428bc', '#940084', '#a80020', '#a81000', '#881400', '#503000', '#007800', '#006800', '#005800', '#004058', '#bcbcbc', '#0078f8', '#0058f8', '#6844fc', '#d800cc', '#e40058', '#f83800', '#e45c10', '#ac7c00', '#00b800', '#00a800', '#00a844', '#008888', '#f8f8f8', '#3cbcfc', '#6888fc', '#9878f8', '#f878f8', '#f85898', '#f87858', '#fca044', '#f8b800', '#b8f818', '#58d854', '#58f898', '#00e8d8', '#787878', '#a4e4fc', '#b8b8f8', '#d8b8f8', '#f8b8f8', '#f8a4c0', '#f0d0b0', '#fce0a8', '#f8d878', '#d8f878', '#b8f8b8', '#b8f8d8', '#00fcfc', '#f8d8f8', '#000000'],
+            pico8: ['#000000', '#1D2B53', '#7E2553', '#008751', '#AB5236', '#5F574F', '#C2C3C7', '#FFF1E8', '#FF004D', '#FFA300', '#FFEC27', '#00E436', '#29ADFF', '#83769C', '#FF77A8', '#FFCCAA'],
+            vaporwave: ['#ff71ce', '#01cdfe', '#05ffa1', '#b967ff', '#fffb96', '#2b00ff', '#ff00aa', '#00f0ff']
+        };
+        const DEFAULT_PALETTE = ['#121214', '#1a1c2c', '#5d275d', '#b13e53', '#ef7d57', '#ffcd75', '#a7f070', '#38b764', '#257179', '#29366f', '#3b5dc9', '#41a6f6', '#73eff7', '#f4f4f4', '#94b0c2', '#566c86', '#333c57', '#000000', '#ffffff', '#eab308'];
+        let RETRO_PALETTE = [...DEFAULT_PALETTE];
 
         const E = id => document.getElementById(id);
         const workspace = E('workspace'), canvasWrapper = E('canvas-wrapper'), canvasContainer = E('canvas-container');
@@ -605,7 +625,7 @@
         function init() { 
             paletteGrid = E('palette-grid'); toolButtons = document.querySelectorAll('[data-tool]'); 
             initPalette(); setColor(currentColor); E('color-picker-sec').value = currentColorSec; updateColorHistoryUI(); 
-            initGridSize(32); setupEvents(); 
+            initGridSize(32, 32); setupEvents(); 
             loadWelcomeRecentProjects(); 
             autoSaveInterval = setInterval(autoSaveProject, 30000); 
         }
@@ -618,15 +638,15 @@
                 timelineFooter.classList.remove('hidden');
             }
         }
-        function createEmptyGrid() { return Array(gridSize).fill(null).map(() => Array(gridSize).fill(null)); }
+        function createEmptyGrid() { return Array(gridHeight).fill(null).map(() => Array(gridWidth).fill(null)); }
         function initData() { frames = [{ id: Date.now().toString(), layers: [{ id: Date.now().toString()+'l', name: 'Layer 1', visible: true, opacity: 1, blendMode: 'normal', grid: createEmptyGrid() }] }]; currentFrameIndex = 0; currentLayerIndex = 0; undoStack = []; commitAndClearSelection(); shapePreview = null; }
-        function initGridSize(size) { gridSize = size; document.querySelectorAll('[data-size]').forEach(b => b.className = parseInt(b.dataset.size) === size ? 'px-3 py-1.5 rounded-sm text-xs font-semibold bg-accent text-white shadow transition-all' : 'px-3 py-1.5 rounded-sm text-xs font-semibold text-gray-400 hover:text-white hover:bg-[#2a2a32] transition-colors'); initData(); initDOMGrid(); renderTimeline(); renderLayersPanel(); renderMainGrid(); updateSymmetryUI(); }
+        function initGridSize(w, h) { gridWidth = w; gridHeight = h; E('input-canvas-w').value = w; E('input-canvas-h').value = h; initData(); initDOMGrid(); renderTimeline(); renderLayersPanel(); renderMainGrid(); updateSymmetryUI(); }
 
         function initDOMGrid() {
-            canvasContainer.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`; canvasContainer.style.gridTemplateRows = `repeat(${gridSize}, 1fr)`; canvasContainer.style.display = 'grid'; canvasContainer.innerHTML = '';
+            canvasContainer.style.gridTemplateColumns = `repeat(${gridWidth}, 1fr)`; canvasContainer.style.gridTemplateRows = `repeat(${gridHeight}, 1fr)`; canvasContainer.style.display = 'grid'; canvasContainer.innerHTML = '';
             if (showGridOverlay) canvasContainer.classList.add('grid-overlay'); else canvasContainer.classList.remove('grid-overlay');
-            for (let y = 0; y < gridSize; y++) {
-                for (let x = 0; x < gridSize; x++) {
+            for (let y = 0; y<gridHeight; y++) {
+                for (let x = 0; x<gridWidth; x++) {
                     const c = document.createElement('div'); c.className = 'pixel-cell'; c.dataset.x = x; c.dataset.y = y;
                     c.addEventListener('mousedown', e => {
                         if (isPlaying || spacePressed) return;
@@ -671,7 +691,7 @@
 
         function updateTransform() { canvasWrapper.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`; E('zoom-level').textContent = Math.round(zoom * 100); }
         function updateSymmetryUI() { E('sym-line-x').style.left = '50%'; E('sym-line-y').style.top = '50%'; E('sym-line-x').classList.toggle('hidden', !symX); E('sym-line-y').classList.toggle('hidden', !symY); }
-        function getSymmetricPoints(x, y) { const pts = [{x, y}]; if (symX) pts.push({x: gridSize-1-x, y}); if (symY) pts.push({x, y: gridSize-1-y}); if (symX&&symY) pts.push({x: gridSize-1-x, y: gridSize-1-y}); return pts.filter((v,i,a) => a.findIndex(t => t.x===v.x && t.y===v.y)===i); }
+        function getSymmetricPoints(x, y) { const pts = [{x, y}]; if (symX) pts.push({x: gridWidth-1-x, y}); if (symY) pts.push({x, y: gridHeight-1-y}); if (symX&&symY) pts.push({x: gridWidth-1-x, y: gridHeight-1-y}); return pts.filter((v,i,a) => a.findIndex(t => t.x===v.x && t.y===v.y)===i); }
 
         function handleInteract(x, y) {
             if (currentTool === 'magic-wand') { applyMagicWand(x, y); return; }
@@ -702,10 +722,10 @@
             const l = frames[currentFrameIndex].layers[currentLayerIndex]; if(!l.visible)return;
             saveState(); const newGrid = JSON.parse(JSON.stringify(l.grid));
             const c = useSecondary ? currentColorSec : currentColor;
-            for(let y=0;y<gridSize;y++)for(let x=0;x<gridSize;x++){
+            for(let y=0;y<gridHeight;y++)for(let x=0;x<gridWidth;x++){
                 if(l.grid[y][x]) continue; let hn = false;
-                if(x>0&&l.grid[y][x-1]) hn=true; if(x<gridSize-1&&l.grid[y][x+1]) hn=true;
-                if(y>0&&l.grid[y-1][x]) hn=true; if(y<gridSize-1&&l.grid[y+1][x]) hn=true;
+                if(x>0&&l.grid[y][x-1]) hn=true; if(x<gridWidth-1&&l.grid[y][x+1]) hn=true;
+                if(y>0&&l.grid[y-1][x]) hn=true; if(y<gridHeight-1&&l.grid[y+1][x]) hn=true;
                 if(hn) newGrid[y][x] = c;
             }
             l.grid = newGrid; renderMainGrid();
@@ -716,25 +736,25 @@
             const c = document.createElement('canvas'), ctx = c.getContext('2d'); ctx.font = '10px monospace';
             c.width = Math.ceil(ctx.measureText(txt).width) + 2; c.height = 12; ctx.font = '10px monospace'; ctx.fillStyle = '#000'; ctx.fillText(txt, 1, 9);
             const img = ctx.getImageData(0,0,c.width,c.height), l = frames[currentFrameIndex].layers[currentLayerIndex], drawC = useSecondary ? currentColorSec : currentColor;
-            for(let iy=0; iy<c.height; iy++) for(let ix=0; ix<c.width; ix++) if (img.data[(iy*c.width+ix)*4+3]>128 && y+iy>=0 && y+iy<gridSize && x+ix>=0 && x+ix<gridSize) l.grid[y+iy][x+ix] = drawC;
+            for(let iy=0; iy<c.height; iy++) for(let ix=0; ix<c.width; ix++) if (img.data[(iy*c.width+ix)*4+3]>128 && y+iy>=0 && y+iy<gridHeight && x+ix>=0 && x+ix<gridWidth) l.grid[y+iy][x+ix] = drawC;
             renderMainGrid();
         }
 
         function applyBurnDodge(x, y, mode) {
-            if (isTileMode) { x = (x % gridSize + gridSize) % gridSize; y = (y % gridSize + gridSize) % gridSize; }
-            const l = frames[currentFrameIndex].layers[currentLayerIndex]; if(!l.visible || x<0||x>=gridSize||y<0||y>=gridSize || !l.grid[y][x]) return;
+            if (isTileMode) { x = (x % gridWidth + gridWidth) % gridWidth; y = (y % gridHeight + gridHeight) % gridHeight; }
+            const l = frames[currentFrameIndex].layers[currentLayerIndex]; if(!l.visible || x<0||x>=gridWidth||y<0||y>=gridHeight || !l.grid[y][x]) return;
             const rgb = hexToRgb(l.grid[y][x]), hsl = hexToHSL("#"+[rgb.r,rgb.g,rgb.b].map(v=>v.toString(16).padStart(2,'0')).join(''));
             if(mode==='burn') hsl.l=Math.max(0,hsl.l-5); else hsl.l=Math.min(100,hsl.l+5); l.grid[y][x] = HSLToHex(hsl.h, hsl.s, hsl.l); renderMainGrid();
         }
 
         function applyMagicWand(startX, startY) {
             const l = frames[currentFrameIndex].layers[currentLayerIndex], tC = l.grid[startY][startX], st = [[startX, startY]], vis = createEmptyGrid(), sel = [];
-            while(st.length>0) { const [cx,cy] = st.pop(); if(cx<0||cx>=gridSize||cy<0||cy>=gridSize || vis[cy][cx] || l.grid[cy][cx]!==tC) continue; vis[cy][cx]=true; sel.push({x:cx,y:cy}); st.push([cx+1,cy],[cx-1,cy],[cx,cy+1],[cx,cy-1]); }
+            while(st.length>0) { const [cx,cy] = st.pop(); if(cx<0||cx>=gridWidth||cy<0||cy>=gridHeight || vis[cy][cx] || l.grid[cy][cx]!==tC) continue; vis[cy][cx]=true; sel.push({x:cx,y:cy}); st.push([cx+1,cy],[cx-1,cy],[cx,cy+1],[cx,cy-1]); }
             if (sel.length>0) { commitAndClearSelection(); const minX=Math.min(...sel.map(p=>p.x)), maxX=Math.max(...sel.map(p=>p.x)), minY=Math.min(...sel.map(p=>p.y)), maxY=Math.max(...sel.map(p=>p.y)), w=maxX-minX+1, h=maxY-minY+1; floatingSelection = { grid: Array(h).fill(null).map(()=>Array(w).fill(null)), x: minX, y: minY, w, h }; saveState(); sel.forEach(p=>{floatingSelection.grid[p.y-minY][p.x-minX]=l.grid[p.y][p.x]; l.grid[p.y][p.x]=null;}); setTool('select'); updateSelectionOverlay(); renderMainGrid(); }
         }
-        function applyReplaceColor(x, y) { const l = frames[currentFrameIndex].layers[currentLayerIndex], tc = l.grid[y][x]; if(!tc) return; saveState(); const c = useSecondary ? currentColorSec : currentColor; for(let cy=0;cy<gridSize;cy++)for(let cx=0;cx<gridSize;cx++)if(l.grid[cy][cx]===tc)l.grid[cy][cx]=c; renderMainGrid(); }
+        function applyReplaceColor(x, y) { const l = frames[currentFrameIndex].layers[currentLayerIndex], tc = l.grid[y][x]; if(!tc) return; saveState(); const c = useSecondary ? currentColorSec : currentColor; for(let cy=0;cy<gridHeight;cy++)for(let cx=0;cx<gridWidth;cx++)if(l.grid[cy][cx]===tc)l.grid[cy][cx]=c; renderMainGrid(); }
         function applyPixelPerfect() {
-            const l = frames[currentFrameIndex].layers[currentLayerIndex]; for(let y=0;y<gridSize;y++)for(let x=0;x<gridSize;x++)l.grid[y][x]=backupGrid[y][x];
+            const l = frames[currentFrameIndex].layers[currentLayerIndex]; for(let y=0;y<gridHeight;y++)for(let x=0;x<gridWidth;x++)l.grid[y][x]=backupGrid[y][x];
             const fil = []; for (let i=0; i<currentStroke.length; i++) { if (i>0 && i<currentStroke.length-1) { const p1=currentStroke[i-1],p2=currentStroke[i],p3=currentStroke[i+1]; if(((p1.x===p2.x&&p2.y===p3.y)||(p1.y===p2.y&&p2.x===p3.x)) && (p1.x!==p3.x&&p1.y!==p3.y)) continue; } fil.push(currentStroke[i]); }
             for (const p of fil) { if(p.action==='burn'||p.action==='dodge') applyBurnDodge(p.x, p.y, p.action); else l.grid[p.y][p.x]=p.color; } renderMainGrid();
         }
@@ -742,13 +762,13 @@
         function getBresenhamLine(x0,y0,x1,y1) { const pts=[]; let dx=Math.abs(x1-x0),dy=Math.abs(y1-y0),sx=x0<x1?1:-1,sy=y0<y1?1:-1,err=dx-dy; while(true){pts.push({x:x0,y:y0}); if(x0===x1&&y0===y1)break; let e2=2*err; if(e2>-dy){err-=dy;x0+=sx;} if(e2<dx){err+=dx;y0+=sy;} } return pts; }
         function drawLineToGrid(x0,y0,x1,y1,c,g) { getBresenhamLine(x0,y0,x1,y1).forEach(p=>{if(g[p.y]&&g[p.y][p.x]!==undefined)g[p.y][p.x]=c;}); }
         function drawRectToGrid(x0,y0,x1,y1,c,g) { const mx=Math.min(x0,x1),Mx=Math.max(x0,x1),my=Math.min(y0,y1),My=Math.max(y0,y1); for(let y=my;y<=My;y++)for(let x=mx;x<=Mx;x++)if(x===mx||x===Mx||y===my||y===My){if(g[y]&&g[y][x]!==undefined)g[y][x]=c;} }
-        function drawCircleToGrid(x0,y0,x1,y1,c,g) { let r=Math.round(Math.sqrt((x1-x0)**2+(y1-y0)**2)),x=0,y=r,d=3-2*r; const pts=(cx,cy,x,y)=>[ [cx+x,cy+y],[cx-x,cy+y],[cx+x,cy-y],[cx-x,cy-y],[cx+y,cy+x],[cx-y,cy+x],[cx+y,cy-x],[cx-y,cy-x] ].forEach(([px,py])=>{if(py>=0&&py<gridSize&&px>=0&&px<gridSize)g[py][px]=c;}); pts(x0,y0,x,y); while(y>=x){x++;if(d>0){y--;d+=4*(x-y)+10;}else d+=4*x+6; pts(x0,y0,x,y);} }
+        function drawCircleToGrid(x0,y0,x1,y1,c,g) { let r=Math.round(Math.sqrt((x1-x0)**2+(y1-y0)**2)),x=0,y=r,d=3-2*r; const pts=(cx,cy,x,y)=>[ [cx+x,cy+y],[cx-x,cy+y],[cx+x,cy-y],[cx-x,cy-y],[cx+y,cy+x],[cx-y,cy+x],[cx+y,cy-x],[cx-y,cy-x] ].forEach(([px,py])=>{if(py>=0&&py<gridHeight&&px>=0&&px<gridWidth)g[py][px]=c;}); pts(x0,y0,x,y); while(y>=x){x++;if(d>0){y--;d+=4*(x-y)+10;}else d+=4*x+6; pts(x0,y0,x,y);} }
         function drawGradientToGrid(x0,y0,x1,y1,c1,c2,g) {
             const dx = x1 - x0, dy = y1 - y0; const lenSq = dx * dx + dy * dy;
             const rgb1 = hexToRgb(c1), rgb2 = hexToRgb(c2);
             if (!rgb1 || !rgb2) return;
-            for (let y = 0; y < gridSize; y++) {
-                for (let x = 0; x < gridSize; x++) {
+            for (let y = 0; y<gridHeight; y++) {
+                for (let x = 0; x<gridWidth; x++) {
                     let t = 0;
                     if (lenSq !== 0) t = Math.max(0, Math.min(1, ((x - x0) * dx + (y - y0) * dy) / lenSq));
                     const r = Math.round(rgb1.r + (rgb2.r - rgb1.r) * t);
@@ -760,16 +780,16 @@
         }
 
         function setPixel(x, y, col) { 
-            if (isTileMode) { x = (x % gridSize + gridSize) % gridSize; y = (y % gridSize + gridSize) % gridSize; }
-            const l = frames[currentFrameIndex].layers[currentLayerIndex]; if(!l.visible||x<0||x>=gridSize||y<0||y>=gridSize)return; if(l.grid[y][x]===col)return; l.grid[y][x]=col; renderMainGrid(); 
+            if (isTileMode) { x = (x % gridWidth + gridWidth) % gridWidth; y = (y % gridHeight + gridHeight) % gridHeight; }
+            const l = frames[currentFrameIndex].layers[currentLayerIndex]; if(!l.visible||x<0||x>=gridWidth||y<0||y>=gridHeight)return; if(l.grid[y][x]===col)return; l.grid[y][x]=col; renderMainGrid(); 
         }
-        function floodFill(sx, sy, col) { const l = frames[currentFrameIndex].layers[currentLayerIndex]; if(!l.visible)return; const tc = l.grid[sy][sx]; if(tc===col)return; const st=[[sx,sy]]; while(st.length>0){const[x,y]=st.pop(); if(x<0||x>=gridSize||y<0||y>=gridSize||l.grid[y][x]!==tc)continue; l.grid[y][x]=col; st.push([x+1,y],[x-1,y],[x,y+1],[x,y-1]);} renderMainGrid(); }
+        function floodFill(sx, sy, col) { const l = frames[currentFrameIndex].layers[currentLayerIndex]; if(!l.visible)return; const tc = l.grid[sy][sx]; if(tc===col)return; const st=[[sx,sy]]; while(st.length>0){const[x,y]=st.pop(); if(x<0||x>=gridWidth||y<0||y>=gridHeight||l.grid[y][x]!==tc)continue; l.grid[y][x]=col; st.push([x+1,y],[x-1,y],[x,y+1],[x,y-1]);} renderMainGrid(); }
 
         function commitAndClearSelection() { if (floatingSelection) commitSelection(); selectionBox = null; updateSelectionOverlay(); }
         function saveState() { commitAndClearSelection(); undoStack.push({ frames: JSON.parse(JSON.stringify(frames)), currentFrameIndex, currentLayerIndex }); if(undoStack.length>MAX_UNDO)undoStack.shift(); }
         function undo() { if(undoStack.length===0||isPlaying)return; commitAndClearSelection(); const s=undoStack.pop(); frames=s.frames; currentFrameIndex=s.currentFrameIndex; currentLayerIndex=s.currentLayerIndex; renderTimeline(); renderLayersPanel(); renderMainGrid(); }
-        function updateSelectionOverlay() { const d = E('selection-overlay'); if(!selectionBox&&!floatingSelection){d.classList.add('hidden');return;} d.classList.remove('hidden'); let mx,my,w,h; if(isSelecting&&selectionBox){mx=Math.min(selectionBox.startX,selectionBox.endX);const Mx=Math.max(selectionBox.startX,selectionBox.endX); my=Math.min(selectionBox.startY,selectionBox.endY);const My=Math.max(selectionBox.startY,selectionBox.endY); w=Mx-mx+1;h=My-my+1;} else if(floatingSelection){mx=floatingSelection.x;my=floatingSelection.y;w=floatingSelection.w;h=floatingSelection.h;} else return; d.style.left=(mx/gridSize*100)+'%'; d.style.top=(my/gridSize*100)+'%'; d.style.width=(w/gridSize*100)+'%'; d.style.height=(h/gridSize*100)+'%'; }
-        function commitSelection() { if(!floatingSelection)return; const l=frames[currentFrameIndex].layers[currentLayerIndex]; for(let y=0;y<floatingSelection.h;y++)for(let x=0;x<floatingSelection.w;x++){const gy=floatingSelection.y+y,gx=floatingSelection.x+x,c=floatingSelection.grid[y][x]; if(c&&gy>=0&&gy<gridSize&&gx>=0&&gx<gridSize)l.grid[gy][gx]=c;} floatingSelection=null; selectionBox=null; updateSelectionOverlay(); renderMainGrid(); }
+        function updateSelectionOverlay() { const d = E('selection-overlay'); if(!selectionBox&&!floatingSelection){d.classList.add('hidden');return;} d.classList.remove('hidden'); let mx,my,w,h; if(isSelecting&&selectionBox){mx=Math.min(selectionBox.startX,selectionBox.endX);const Mx=Math.max(selectionBox.startX,selectionBox.endX); my=Math.min(selectionBox.startY,selectionBox.endY);const My=Math.max(selectionBox.startY,selectionBox.endY); w=Mx-mx+1;h=My-my+1;} else if(floatingSelection){mx=floatingSelection.x;my=floatingSelection.y;w=floatingSelection.w;h=floatingSelection.h;} else return; d.style.left=(mx/gridWidth*100)+'%'; d.style.top=(my/gridHeight*100)+'%'; d.style.width=(w/gridWidth*100)+'%'; d.style.height=(h/gridHeight*100)+'%'; }
+        function commitSelection() { if(!floatingSelection)return; const l=frames[currentFrameIndex].layers[currentLayerIndex]; for(let y=0;y<floatingSelection.h;y++)for(let x=0;x<floatingSelection.w;x++){const gy=floatingSelection.y+y,gx=floatingSelection.x+x,c=floatingSelection.grid[y][x]; if(c&&gy>=0&&gy<gridHeight&&gx>=0&&gx<gridWidth)l.grid[gy][gx]=c;} floatingSelection=null; selectionBox=null; updateSelectionOverlay(); renderMainGrid(); }
 
         // Create floating selection from current selection box
         function createFloatingSelection(){
@@ -803,10 +823,10 @@
             commitAndClearSelection(); saveState();
             const l = frames[currentFrameIndex].layers[currentLayerIndex];
             const newGrid = createEmptyGrid();
-            for(let y=0; y<gridSize; y++) {
-                for(let x=0; x<gridSize; x++) {
-                    const nx = (x - dx + gridSize) % gridSize;
-                    const ny = (y - dy + gridSize) % gridSize;
+            for(let y=0; y<gridHeight; y++) {
+                for(let x=0; x<gridWidth; x++) {
+                    const nx = (x - dx + gridWidth) % gridWidth;
+                    const ny = (y - dy + gridHeight) % gridHeight;
                     if(l.grid[ny] && l.grid[ny][nx]) newGrid[y][x] = l.grid[ny][nx];
                 }
             }
@@ -817,10 +837,10 @@
             const l = frames[currentFrameIndex].layers[currentLayerIndex];
             const newGrid = createEmptyGrid();
             const horizontal = (axis === 'h');
-            for (let y=0; y<gridSize; y++) {
-                for (let x=0; x<gridSize; x++) {
-                    const ny = horizontal ? y : gridSize - 1 - y;
-                    const nx = horizontal ? gridSize - 1 - x : x;
+            for (let y=0; y<gridHeight; y++) {
+                for (let x=0; x<gridWidth; x++) {
+                    const ny = horizontal ? y : gridHeight - 1 - y;
+                    const nx = horizontal ? gridWidth - 1 - x : x;
                     newGrid[ny][nx] = l.grid[y][x];
                 }
             }
@@ -832,9 +852,9 @@
             saveState();
             const l = frames[currentFrameIndex].layers[currentLayerIndex];
             const newGrid = createEmptyGrid();
-            for (let y=0; y<gridSize; y++) {
-                for (let x=0; x<gridSize; x++) {
-                    newGrid[x][gridSize - 1 - y] = l.grid[y][x];
+            for (let y=0; y<gridHeight; y++) {
+                for (let x=0; x<gridWidth; x++) {
+                    newGrid[x][gridHeight - 1 - y] = l.grid[y][x];
                 }
             }
             l.grid = newGrid;
@@ -857,7 +877,7 @@
             return fA===0 ? null : `rgba(${Math.round(fR)},${Math.round(fG)},${Math.round(fB)},${fA})`;
         }
         function renderMainGrid() {
-            for (let y=0; y<gridSize; y++) { for (let x=0; x<gridSize; x++) {
+            for (let y=0; y<gridHeight; y++) { for (let x=0; x<gridWidth; x++) {
                 let c = getCompositedColorRGB(currentFrameIndex, x, y);
                 if (!c && onionSkinning && currentFrameIndex > 0) {
                     for (let f = 1; f <= onionFrames && currentFrameIndex - f >= 0; f++) {
@@ -869,15 +889,15 @@
                         }
                     }
                 }
-                const cell = canvasContainer.children[y*gridSize+x]; if (c) cell.style.setProperty('--cell-color', c); else cell.style.removeProperty('--cell-color');
+                const cell = canvasContainer.children[y*gridWidth+x]; if (c) cell.style.setProperty('--cell-color', c); else cell.style.removeProperty('--cell-color');
             } } updatePreview();
         }
         function updatePreview() {
-            previewCanvas.width = isTileMode ? gridSize*3 : gridSize; previewCanvas.height = isTileMode ? gridSize*3 : gridSize;
+            previewCanvas.width = isTileMode ? gridWidth*3 : gridWidth; previewCanvas.height = isTileMode ? gridHeight*3 : gridHeight;
             bigPreviewCanvas.width = previewCanvas.width; bigPreviewCanvas.height = previewCanvas.height;
-            const id = previewCtx.createImageData(gridSize, gridSize);
-            for (let y=0; y<gridSize; y++) for (let x=0; x<gridSize; x++) { const idx=(y*gridSize+x)*4, c=getCompositedColorRGB(currentFrameIndex,x,y); if(c){ const m=c.match(/rgba\((\d+),\s*(\d+),\s*(\d+),\s*([\d.]+)\)/); id.data[idx]=parseInt(m[1]);id.data[idx+1]=parseInt(m[2]);id.data[idx+2]=parseInt(m[3]);id.data[idx+3]=Math.round(parseFloat(m[4])*255); } else id.data[idx+3]=0; }
-            if (isTileMode) { const t=document.createElement('canvas'); t.width=gridSize; t.height=gridSize; t.getContext('2d').putImageData(id,0,0); for(let ty=0;ty<3;ty++)for(let tx=0;tx<3;tx++){previewCtx.drawImage(t,tx*gridSize,ty*gridSize); bigPreviewCtx.drawImage(t,tx*gridSize,ty*gridSize); } } else { previewCtx.putImageData(id,0,0); bigPreviewCtx.putImageData(id,0,0); }
+            const id = previewCtx.createImageData(gridWidth, gridHeight);
+            for (let y=0; y<gridHeight; y++) for (let x=0; x<gridWidth; x++) { const idx=(y*gridWidth+x)*4, c=getCompositedColorRGB(currentFrameIndex,x,y); if(c){ const m=c.match(/rgba\((\d+),\s*(\d+),\s*(\d+),\s*([\d.]+)\)/); id.data[idx]=parseInt(m[1]);id.data[idx+1]=parseInt(m[2]);id.data[idx+2]=parseInt(m[3]);id.data[idx+3]=Math.round(parseFloat(m[4])*255); } else id.data[idx+3]=0; }
+            if (isTileMode) { const t=document.createElement('canvas'); t.width=gridWidth; t.height=gridHeight; t.getContext('2d').putImageData(id,0,0); for(let ty=0;ty<3;ty++)for(let tx=0;tx<3;tx++){previewCtx.drawImage(t,tx*gridWidth,ty*gridHeight); bigPreviewCtx.drawImage(t,tx*gridWidth,ty*gridHeight); } } else { previewCtx.putImageData(id,0,0); bigPreviewCtx.putImageData(id,0,0); }
         }
 
         // Frames / Timeline
@@ -894,8 +914,8 @@
             const tl = E('timeline-frames'); tl.innerHTML = '';
             frames.forEach((f, idx) => {
                 const d = document.createElement('div'); d.className = `w-[64px] h-[64px] shrink-0 bg-base border-2 rounded cursor-pointer relative group flex items-center justify-center overflow-hidden transition-all ${idx===currentFrameIndex ? 'border-accent shadow-[0_0_12px_rgba(90,107,140,0.6)] scale-105' : 'border-border hover:border-gray-500'}`;
-                const c = document.createElement('canvas'); c.width=gridSize; c.height=gridSize; c.className='w-[85%] h-[85%] pixelated-render checkered-bg-small'; const ctx=c.getContext('2d'), id=ctx.createImageData(gridSize, gridSize);
-                for(let y=0; y<gridSize; y++)for(let x=0; x<gridSize; x++){ const col=getCompositedColorRGB(idx,x,y), i=(y*gridSize+x)*4; if(col){ const m=col.match(/rgba\((\d+),\s*(\d+),\s*(\d+),\s*([\d.]+)\)/); id.data[i]=parseInt(m[1]); id.data[i+1]=parseInt(m[2]); id.data[i+2]=parseInt(m[3]); id.data[i+3]=Math.round(parseFloat(m[4])*255); } else id.data[i+3]=0; }
+                const c = document.createElement('canvas'); c.width=gridWidth; c.height=gridHeight; c.className='w-[85%] h-[85%] pixelated-render checkered-bg-small'; const ctx=c.getContext('2d'), id=ctx.createImageData(gridWidth, gridHeight);
+                for(let y=0; y<gridHeight; y++)for(let x=0; x<gridWidth; x++){ const col=getCompositedColorRGB(idx,x,y), i=(y*gridWidth+x)*4; if(col){ const m=col.match(/rgba\((\d+),\s*(\d+),\s*(\d+),\s*([\d.]+)\)/); id.data[i]=parseInt(m[1]); id.data[i+1]=parseInt(m[2]); id.data[i+2]=parseInt(m[3]); id.data[i+3]=Math.round(parseFloat(m[4])*255); } else id.data[i+3]=0; }
                 ctx.putImageData(id, 0, 0); d.appendChild(c); const n=document.createElement('div'); n.className='absolute top-0 left-0 bg-black/80 text-white text-[9px] px-1 rounded-br font-mono border-r border-b border-[#333]'; n.textContent=idx+1; d.appendChild(n);
                 const ov=document.createElement('div'); ov.className='absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 backdrop-blur-[1px]';
                 const dp=document.createElement('button'); dp.innerHTML='<i class="fa-solid fa-copy text-[10px]"></i>'; dp.className='text-white hover:text-accent p-1'; dp.onclick=e=>{e.stopPropagation();commitAndClearSelection();saveState();frames.splice(idx+1,0,{id:Date.now().toString(),layers:f.layers.map(l=>({...l,id:Date.now().toString()+Math.random(),grid:JSON.parse(JSON.stringify(l.grid))}))});currentFrameIndex=idx+1;renderTimeline();renderLayersPanel();renderMainGrid();};
@@ -934,10 +954,10 @@
                 const eye = document.createElement('button'); eye.innerHTML=`<i class="fa-solid ${l.visible?'fa-eye text-gray-300':'fa-eye-slash text-gray-600'} text-xs"></i>`; eye.onclick=e=>{e.stopPropagation();saveState();l.visible=!l.visible;renderLayersPanel();renderMainGrid();};
                 
                 const thumbCvs = document.createElement('canvas');
-                thumbCvs.width = gridSize; thumbCvs.height = gridSize;
+                thumbCvs.width = gridWidth; thumbCvs.height = gridHeight;
                 thumbCvs.className = 'w-7 h-7 shrink-0 bg-panel border border-[#3a3a44] rounded-[3px] pixelated-render checkered-bg-small shadow-sm';
                 const tCtx = thumbCvs.getContext('2d');
-                for(let y=0;y<gridSize;y++) for(let x=0;x<gridSize;x++) if(l.grid[y][x]){ tCtx.fillStyle=l.grid[y][x]; tCtx.fillRect(x,y,1,1); }
+                for(let y=0;y<gridHeight;y++) for(let x=0;x<gridWidth;x++) if(l.grid[y][x]){ tCtx.fillStyle=l.grid[y][x]; tCtx.fillRect(x,y,1,1); }
                 
                 const nm = document.createElement('span'); nm.className=`text-[11px] font-semibold truncate ${aI===currentLayerIndex?'text-white':'text-gray-400'}`; nm.textContent=l.name;
                 ls.appendChild(eye); ls.appendChild(thumbCvs); ls.appendChild(nm); top.appendChild(ls);
@@ -966,7 +986,7 @@
                             <i class="fa-solid ${p.appMode === 'animation' ? 'fa-film text-[#ffda79]' : 'fa-paintbrush text-[#41a6f6]'}"></i>
                             <div>
                                 <div class="text-sm text-white font-bold">${p.name}</div>
-                                <div class="text-[10px] text-gray-500">${p.frames.length} Frame(s) • ${p.gridSize}x${p.gridSize}</div>
+                                <div class="text-[10px] text-gray-500">${p.frames.length} Frame(s) • ${p.gridWidth||p.gridSize}x${p.gridHeight||p.gridSize}</div>
                             </div>
                         </div>
                     `;
@@ -977,17 +997,17 @@
         }
         function autoSaveProject() {
             const name = E('project-name') ? E('project-name').value : 'Untitled';
-            const data = { v: 1, name, gridSize, fps, frames, currentFrameIndex, currentLayerIndex, appMode };
+            const data = { v: 1, name, gridWidth, gridHeight, fps, frames, currentFrameIndex, currentLayerIndex, appMode };
             localStorage.setItem(`pixelstudio_${name}_${Date.now()}`, JSON.stringify(data));
             const ind = E('auto-save-indicator');
             if(ind) { ind.classList.remove('hidden'); setTimeout(()=>ind.classList.add('hidden'), 2000); }
         }
         function loadProjectData(p) {
-            gridSize = p.gridSize || 32; fps = p.fps || 12; frames = p.frames; E('project-name').value = p.name || 'Untitled';
+            gridWidth = p.gridWidth || p.gridSize || 32; gridHeight = p.gridHeight || p.gridSize || 32; fps = p.fps || 12; frames = p.frames; E('project-name').value = p.name || 'Untitled';
             if (p.appMode) setAppMode(p.appMode);
             frames.forEach(f=>f.layers.forEach(l=>{if(l.opacity===undefined)l.opacity=1;if(!l.blendMode)l.blendMode='normal';}));
             currentFrameIndex = 0; currentLayerIndex = 0; undoStack = []; E('fps-input').value = fps;
-            document.querySelectorAll('[data-size]').forEach(b=>b.className=parseInt(b.dataset.size)===gridSize?'px-3 py-1.5 rounded-sm text-xs font-semibold bg-accent text-white shadow transition-all':'px-3 py-1.5 rounded-sm text-xs font-semibold text-gray-400 hover:text-white hover:bg-[#2a2a32] transition-colors');
+            E('input-canvas-w').value = gridWidth; E('input-canvas-h').value = gridHeight;
             initDOMGrid(); renderTimeline(); renderLayersPanel(); renderMainGrid(); updateSymmetryUI();
         }
 
@@ -1007,29 +1027,29 @@
             }
         }
         function exportImage(type, scale) {
-            commitAndClearSelection(); const sc = scale, fs = gridSize*sc, c = document.createElement('canvas'); c.width = type==='sheet' ? fs*frames.length : fs; c.height = fs;
+            commitAndClearSelection(); const sc = scale, fw = gridWidth*sc, fh = gridHeight*sc, c = document.createElement('canvas'); c.width = type==='sheet' ? fw*frames.length : fw; c.height = fh;
             const ctx = c.getContext('2d'); ctx.imageSmoothingEnabled = false;
-            if (type==='png') { for(let y=0;y<gridSize;y++)for(let x=0;x<gridSize;x++){const col=getCompositedColorRGB(currentFrameIndex,x,y);if(col){ctx.fillStyle=col;ctx.fillRect(x*sc,y*sc,sc,sc);}} }
-            else if (type==='sheet') { frames.forEach((f,i)=>{const off=i*fs;for(let y=0;y<gridSize;y++)for(let x=0;x<gridSize;x++){const col=getCompositedColorRGB(i,x,y);if(col){ctx.fillStyle=col;ctx.fillRect(off+(x*sc),y*sc,sc,sc);}}}); }
-            const l = document.createElement('a'); l.download = type==='sheet' ? `spritesheet_${gridSize}px.png` : `frame_${currentFrameIndex}_${gridSize}px.png`; l.href = c.toDataURL(); l.click(); E('export-modal').classList.add('hidden');
+            if (type==='png') { for(let y=0;y<gridHeight;y++)for(let x=0;x<gridWidth;x++){const col=getCompositedColorRGB(currentFrameIndex,x,y);if(col){ctx.fillStyle=col;ctx.fillRect(x*sc,y*sc,sc,sc);}} }
+            else if (type==='sheet') { frames.forEach((f,i)=>{const off=i*fs;for(let y=0;y<gridHeight;y++)for(let x=0;x<gridWidth;x++){const col=getCompositedColorRGB(i,x,y);if(col){ctx.fillStyle=col;ctx.fillRect(off+(x*sc),y*sc,sc,sc);}}}); }
+            const l = document.createElement('a'); l.download = type==='sheet' ? `spritesheet_${gridWidth}x${gridHeight}.png` : `frame_${currentFrameIndex}_${gridWidth}x${gridHeight}.png`; l.href = c.toDataURL(); l.click(); E('export-modal').classList.add('hidden');
         }
 
         function exportSVG() {
-            let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${gridSize} ${gridSize}">\n`;
-            for(let y=0;y<gridSize;y++)for(let x=0;x<gridSize;x++){const col=getCompositedColorRGB(currentFrameIndex,x,y);if(col){svg+=`<rect x="${x}" y="${y}" width="1" height="1" fill="${col}"/>\n`;}}
+            let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${gridWidth} ${gridHeight}">\n`;
+            for(let y=0;y<gridHeight;y++)for(let x=0;x<gridWidth;x++){const col=getCompositedColorRGB(currentFrameIndex,x,y);if(col){svg+=`<rect x="${x}" y="${y}" width="1" height="1" fill="${col}"/>\n`;}}
             svg += `</svg>`;
-            const b = new Blob([svg], {type: 'image/svg+xml'}); const l = document.createElement('a'); l.download = `pixel_${gridSize}px.svg`; l.href = URL.createObjectURL(b); l.click(); E('export-modal').classList.add('hidden');
+            const b = new Blob([svg], {type: 'image/svg+xml'}); const l = document.createElement('a'); l.download = `pixel_${gridWidth}x${gridHeight}.svg`; l.href = URL.createObjectURL(b); l.click(); E('export-modal').classList.add('hidden');
         }
 
         function exportCSS() {
             let css = '', w = 0, h = 0;
-            for(let y=0;y<gridSize;y++)for(let x=0;x<gridSize;x++){const col=getCompositedColorRGB(currentFrameIndex,x,y);if(col){ if(css) css += ', '; css += `${x}px ${y}px ${col}`; w=Math.max(w, x); h=Math.max(h, y); }}
+            for(let y=0;y<gridHeight;y++)for(let x=0;x<gridWidth;x++){const col=getCompositedColorRGB(currentFrameIndex,x,y);if(col){ if(css) css += ', '; css += `${x}px ${y}px ${col}`; w=Math.max(w, x); h=Math.max(h, y); }}
             const str = `.pixel-art { width: 1px; height: 1px; box-shadow: ${css}; }`;
             navigator.clipboard.writeText(str).then(()=>alert('CSS Copied to clipboard!')).catch(e=>alert('Failed to copy CSS')); E('export-modal').classList.add('hidden');
         }
 
         function setupEvents() {
-            window.addEventListener('mouseup', () => { isDrawing = false; lastPos = null; if (isDrawingShape) { isDrawingShape = false; saveState(); const l = frames[currentFrameIndex].layers[currentLayerIndex]; for (let y=0; y<gridSize; y++) for (let x=0; x<gridSize; x++) if (shapePreview.grid[y][x]) l.grid[y][x] = shapePreview.grid[y][x]; shapePreview = null; renderMainGrid(); } if (currentTool==='select') { if (isSelecting) { isSelecting = false; createFloatingSelection(); } else if (isMoving) isMoving = false; } });
+            window.addEventListener('mouseup', () => { isDrawing = false; lastPos = null; if (isDrawingShape) { isDrawingShape = false; saveState(); const l = frames[currentFrameIndex].layers[currentLayerIndex]; for (let y=0; y<gridHeight; y++) for (let x=0; x<gridWidth; x++) if (shapePreview.grid[y][x]) l.grid[y][x] = shapePreview.grid[y][x]; shapePreview = null; renderMainGrid(); } if (currentTool==='select') { if (isSelecting) { isSelecting = false; createFloatingSelection(); } else if (isMoving) isMoving = false; } });
             window.addEventListener('keydown', e => { 
                 if (e.target.tagName==='INPUT') return;
                 if (e.code==='Space') { spacePressed = true; workspace.style.cursor = 'grab'; } 
@@ -1118,7 +1138,7 @@
 
             window.addEventListener('touchend', () => {
                 touchDrawing = false; isDrawing = false; lastPos = null;
-                if (isDrawingShape) { isDrawingShape = false; saveState(); const l = frames[currentFrameIndex].layers[currentLayerIndex]; for (let y=0; y<gridSize; y++) for (let x=0; x<gridSize; x++) if (shapePreview.grid[y][x]) l.grid[y][x] = shapePreview.grid[y][x]; shapePreview = null; renderMainGrid(); }
+                if (isDrawingShape) { isDrawingShape = false; saveState(); const l = frames[currentFrameIndex].layers[currentLayerIndex]; for (let y=0; y<gridHeight; y++) for (let x=0; x<gridWidth; x++) if (shapePreview.grid[y][x]) l.grid[y][x] = shapePreview.grid[y][x]; shapePreview = null; renderMainGrid(); }
             });
 
             E('color-picker').addEventListener('input', e => setColor(e.target.value));
@@ -1128,7 +1148,7 @@
             if(E('slider-r')) { E('slider-r').addEventListener('input', updateFromRGB); E('slider-g').addEventListener('input', updateFromRGB); E('slider-b').addEventListener('input', updateFromRGB); }
             if(E('btn-add-to-palette')) { E('btn-add-to-palette').addEventListener('click', () => { const hc = currentColor.toLowerCase(); const btn = E('btn-add-to-palette'); const resetHtml = '<i class="fa-solid fa-plus"></i> Add'; if(!RETRO_PALETTE.map(c=>c.toLowerCase()).includes(hc)) { RETRO_PALETTE.push(hc); initPalette(); E('palette-grid').scrollTop = E('palette-grid').scrollHeight; btn.innerHTML = '<i class="fa-solid fa-check text-green-400"></i> Added!'; setTimeout(() => btn.innerHTML = resetHtml, 1000); } else { btn.innerHTML = '<i class="fa-solid fa-exclamation text-yellow-400"></i> Exists'; setTimeout(() => btn.innerHTML = resetHtml, 1000); } }); }
             if(E('btn-return-home')) { E('btn-return-home').addEventListener('click', () => { E('welcome-modal').classList.remove('hidden'); }); }
-            document.querySelectorAll('[data-size]').forEach(b => b.addEventListener('click', () => { if(confirm('Changing grid size will reset the current project. Continue?')) initGridSize(parseInt(b.dataset.size)); }));
+            E('btn-resize-canvas').addEventListener('click', () => { if(confirm('Applying a new size will clear the current project. Continue?')) initGridSize(parseInt(E('input-canvas-w').value)||32, parseInt(E('input-canvas-h').value)||32); });
             E('btn-clear').addEventListener('click', () => { if(confirm('Clear layer?')){commitAndClearSelection();saveState();frames[currentFrameIndex].layers[currentLayerIndex].grid=createEmptyGrid();renderMainGrid();} });
             E('btn-undo').addEventListener('click', undo); 
             E('btn-add-frame').addEventListener('click', addFrame); 
@@ -1140,13 +1160,19 @@
             if(E('btn-tl-next')) E('btn-tl-next').addEventListener('click', () => { currentFrameIndex = (currentFrameIndex + 1) % frames.length; renderTimeline(); renderMainGrid(); updateSymmetryUI(); });
             E('fps-input').addEventListener('input', e => { fps = parseInt(e.target.value) || 12; if(E('tl-fps-input')) E('tl-fps-input').value = fps; if(isPlaying){ togglePlay(); togglePlay(); } });
             if(E('tl-fps-input')) E('tl-fps-input').addEventListener('input', e => { fps = parseInt(e.target.value) || 12; E('fps-input').value = fps; if(isPlaying){ togglePlay(); togglePlay(); } });
+            E('color-palette-select').addEventListener('change', (e) => {
+                const val = e.target.value;
+                RETRO_PALETTE = val === 'custom' ? [...DEFAULT_PALETTE] : [...PREMADE_PALETTES[val]];
+                initPalette();
+            });
             if(E('btn-quick-gif')) E('btn-quick-gif').addEventListener('click', () => { if(E('export-gif-btn')) E('export-gif-btn').click(); });
             if(E('btn-quick-png')) E('btn-quick-png').addEventListener('click', () => { if(E('export-png')) E('export-png').click(); });
+            if(E('btn-quick-sheet')) E('btn-quick-sheet').addEventListener('click', () => { if(E('export-sheet-btn')) E('export-sheet-btn').click(); });
             
             // Save/Load File
-            E('btn-save-file').addEventListener('click', () => { commitAndClearSelection(); const b=new Blob([JSON.stringify({name: E('project-name').value, gridSize,fps,frames,RETRO_PALETTE})],{type:'application/json'}); const l=document.createElement('a'); l.href=URL.createObjectURL(b); l.download=`${E('project-name').value||'zpriteforge'}.pxl`; l.click(); });
+            E('btn-save-file').addEventListener('click', () => { commitAndClearSelection(); const b=new Blob([JSON.stringify({name: E('project-name').value, gridWidth,gridHeight,fps,frames,RETRO_PALETTE})],{type:'application/json'}); const l=document.createElement('a'); l.href=URL.createObjectURL(b); l.download=`${E('project-name').value||'zpriteforge'}.pxl`; l.click(); });
             E('btn-load-file').addEventListener('click', () => E('file-load').click());
-            E('file-load').addEventListener('change', e => { const f=e.target.files[0]; if(!f)return; const r=new FileReader(); r.onload=ev=>{try{const p=JSON.parse(ev.target.result);if(p.gridSize&&p.frames){loadProjectData(p); E('file-load').value='';}}catch(err){alert('Invalid .pxl file! Make sure it is a valid ZpriteForge project file.');}}; r.readAsText(f); });
+            E('file-load').addEventListener('change', e => { const f=e.target.files[0]; if(!f)return; const r=new FileReader(); r.onload=ev=>{try{const p=JSON.parse(ev.target.result);if((p.gridSize||(p.gridWidth&&p.gridHeight))&&p.frames){loadProjectData(p); E('file-load').value='';}}catch(err){alert('Invalid .pxl file! Make sure it is a valid ZpriteForge project file.');}}; r.readAsText(f); });
             E('project-name').addEventListener('blur', autoSaveProject);
 
             // Import Image
@@ -1171,16 +1197,16 @@
                     const img = new Image();
                     img.onload = () => {
                         const c = document.createElement('canvas');
-                        c.width = gridSize; c.height = gridSize;
+                        c.width = gridWidth; c.height = gridHeight;
                         const ctx = c.getContext('2d');
                         ctx.imageSmoothingEnabled = false;
-                        ctx.drawImage(img, 0, 0, gridSize, gridSize);
-                        const id = ctx.getImageData(0, 0, gridSize, gridSize);
+                        ctx.drawImage(img, 0, 0, gridWidth, gridHeight);
+                        const id = ctx.getImageData(0, 0, gridWidth, gridHeight);
                         saveState();
                         const l = frames[currentFrameIndex].layers[currentLayerIndex];
-                        for (let y = 0; y < gridSize; y++) {
-                            for (let x = 0; x < gridSize; x++) {
-                                const idx = (y * gridSize + x) * 4;
+                        for (let y = 0; y<gridHeight; y++) {
+                            for (let x = 0; x<gridWidth; x++) {
+                                const idx = (y * gridWidth + x) * 4;
                                 if (id.data[idx+3] > 128) {
                                     const r = id.data[idx], g = id.data[idx+1], b = id.data[idx+2];
                                     const hex = '#' + ((1<<24) + (r<<16) + (g<<8) + b).toString(16).slice(1);
@@ -1262,7 +1288,7 @@
             E('export-sheet-btn').addEventListener('click', () => exportImage('sheet', parseInt(E('export-scale').value)));
             E('export-svg').addEventListener('click', exportSVG);
             E('export-css').addEventListener('click', exportCSS);
-            E('export-gif-btn').addEventListener('click', () => { commitAndClearSelection(); fetch('https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js').then(r=>r.text()).then(t=>{ const b=new Blob([t],{type:'application/javascript'}), w=URL.createObjectURL(b), sc=parseInt(E('export-scale').value), fs=gridSize*sc, gif=new GIF({workers:2,quality:10,width:fs,height:fs,workerScript:w,transparent:'rgba(0,0,0,0)'}); frames.forEach(f=>{const c=document.createElement('canvas');c.width=fs;c.height=fs;const ctx=c.getContext('2d');ctx.imageSmoothingEnabled=false;for(let y=0;y<gridSize;y++)for(let x=0;x<gridSize;x++){const col=getCompositedColorRGB(frames.indexOf(f),x,y);if(col){ctx.fillStyle=col;ctx.fillRect(x*sc,y*sc,sc,sc);}}gif.addFrame(c,{delay:1000/fps});}); gif.on('finished',b=>{const l=document.createElement('a');l.download=`anim_${gridSize}px.gif`;l.href=URL.createObjectURL(b);l.click(); E('export-modal').classList.add('hidden');}); gif.render(); }); });
+            E('export-gif-btn').addEventListener('click', () => { commitAndClearSelection(); fetch('https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js').then(r=>r.text()).then(t=>{ const b=new Blob([t],{type:'application/javascript'}), w=URL.createObjectURL(b), sc=parseInt(E('export-scale').value), fw=gridWidth*sc, fh=gridHeight*sc, gif=new GIF({workers:2,quality:10,width:fw,height:fh,workerScript:w,transparent:'rgba(0,0,0,0)'}); frames.forEach(f=>{const c=document.createElement('canvas');c.width=fw;c.height=fh;const ctx=c.getContext('2d');ctx.imageSmoothingEnabled=false;for(let y=0;y<gridHeight;y++)for(let x=0;x<gridWidth;x++){const col=getCompositedColorRGB(frames.indexOf(f),x,y);if(col){ctx.fillStyle=col;ctx.fillRect(x*sc,y*sc,sc,sc);}}gif.addFrame(c,{delay:1000/fps});}); gif.on('finished',b=>{const l=document.createElement('a');l.download=`anim_${gridWidth}x${gridHeight}.gif`;l.href=URL.createObjectURL(b);l.click(); E('export-modal').classList.add('hidden');}); gif.render(); }); });
 
             // Brush
             E('brush-size').addEventListener('input', e => { brushSize = parseInt(e.target.value); E('brush-size-val').textContent = brushSize; });
@@ -1290,7 +1316,7 @@
                     if (frameH <= 16) newSize = 16;
                     else if (frameH <= 32) newSize = 32;
                     else newSize = 64;
-                    gridSize = newSize;
+                    gridWidth = newSize; gridHeight = newSize;
                     initGridSize(newSize);
                     E('project-name').value = f.name.replace(/\.[^/.]+$/, "");
                     // Create frames from spritesheet
