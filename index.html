@@ -305,13 +305,17 @@
                 <div class="p-4 border-b border-border bg-[#18181d] shrink-0">
                     <div class="flex items-center justify-between mb-3">
                         <h2 class="text-[11px] font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2"><span><i class="fa-solid fa-palette"></i> Colors</span></h2>
-                        <select id="color-palette-select" class="bg-base text-gray-300 text-[10px] p-1 rounded border border-border outline-none focus:border-accent">
+                        <div class="flex items-center gap-1">
+                            <select id="color-palette-select" class="bg-base text-gray-300 text-[10px] p-1 rounded border border-border outline-none focus:border-accent">
                             <option value="custom">Custom Palette</option>
                             <option value="gameboy">GameBoy</option>
                             <option value="nes">NES</option>
                             <option value="pico8">PICO-8</option>
                             <option value="vaporwave">Vaporwave</option>
                         </select>
+                            <button id="btn-extract-palette" class="bg-panel border border-border px-1.5 py-1 rounded text-[10px] font-bold text-gray-400 hover:text-white transition-all shadow-sm" title="Extract Palette from Image"><i class="fa-solid fa-camera"></i></button>
+                            <input type="file" id="palette-extract-input" class="hidden" accept="image/*">
+                        </div>
                     </div>
                     <div class="flex gap-2 mb-3">
                         <div class="bg-base p-2 rounded border border-border flex-1 flex flex-col items-center shadow-inner relative group cursor-pointer" onclick="document.getElementById('color-picker').click()">
@@ -384,6 +388,7 @@
                     <div class="flex justify-between items-center mb-2">
                         <h2 class="text-sm font-black text-gray-300 uppercase tracking-widest flex items-center gap-2"><i class="fa-solid fa-layer-group text-accent"></i> Layers</h2>
                         <div class="flex gap-1">
+                            <button id="btn-auto-outline" class="text-xs text-gray-400 hover:text-white transition-colors p-1" title="Auto-Outline Layer"><i class="fa-solid fa-border-all bg-panel p-1.5 rounded shadow-sm border border-border hover:border-gray-500"></i></button>
                             <button id="btn-clear" class="text-xs text-red-400/80 hover:text-red-400 transition-colors p-1" title="Clear Layer"><i class="fa-solid fa-trash-can bg-panel p-1.5 rounded shadow-sm border border-border hover:border-gray-500"></i></button>
                             <button id="btn-add-layer" class="text-xs text-gray-400 hover:text-white transition-colors p-1" title="Add Layer"><i class="fa-solid fa-plus bg-panel p-1.5 rounded shadow-sm border border-border hover:border-gray-500"></i></button>
                         </div>
@@ -949,7 +954,8 @@
                     }
                 };
 
-                const top = document.createElement('div'); top.className = 'flex items-center justify-between w-full pointer-events-none gap-2';
+                
+                const top = document.createElement('div'); top.className = 'flex items-center justify-between w-full pointer-events-none gap-2 mb-1';
                 const ls = document.createElement('div'); ls.className = 'flex items-center gap-2 overflow-hidden pointer-events-auto flex-1';
                 const eye = document.createElement('button'); eye.innerHTML=`<i class="fa-solid ${l.visible?'fa-eye text-gray-300':'fa-eye-slash text-gray-600'} text-xs"></i>`; eye.onclick=e=>{e.stopPropagation();saveState();l.visible=!l.visible;renderLayersPanel();renderMainGrid();};
                 
@@ -957,19 +963,27 @@
                 thumbCvs.width = gridWidth; thumbCvs.height = gridHeight;
                 thumbCvs.className = 'w-7 h-7 shrink-0 bg-panel border border-[#3a3a44] rounded-[3px] pixelated-render checkered-bg-small shadow-sm';
                 const tCtx = thumbCvs.getContext('2d');
-                for(let y=0;y<gridHeight;y++) for(let x=0;x<gridWidth;x++) if(l.grid[y][x]){ tCtx.fillStyle=l.grid[y][x]; tCtx.fillRect(x,y,1,1); }
+                if(l.grid){ const tImg=tCtx.createImageData(gridWidth,gridHeight); for(let y=0;y<gridHeight;y++)for(let x=0;x<gridWidth;x++){const c=l.grid[y][x]; if(c){const rgb=hexToRgb(c);const idx=(y*gridWidth+x)*4;tImg.data[idx]=rgb.r;tImg.data[idx+1]=rgb.g;tImg.data[idx+2]=rgb.b;tImg.data[idx+3]=Math.round((l.opacity !== undefined ? l.opacity : 1)*255);}} tCtx.putImageData(tImg,0,0); }
                 
-                const nm = document.createElement('span'); nm.className=`text-[11px] font-semibold truncate ${aI===currentLayerIndex?'text-white':'text-gray-400'}`; nm.textContent=l.name;
-                ls.appendChild(eye); ls.appendChild(thumbCvs); ls.appendChild(nm); top.appendChild(ls);
-                if (fr.layers.length>1) { const del=document.createElement('button'); del.innerHTML='<i class="fa-solid fa-trash text-[10px]"></i>'; del.className='text-gray-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all pointer-events-auto w-5 h-5 flex items-center justify-center shrink-0'; d.classList.add('group'); del.onclick=e=>{e.stopPropagation();commitAndClearSelection();saveState();fr.layers.splice(aI,1);if(currentLayerIndex>=fr.layers.length)currentLayerIndex=fr.layers.length-1;renderLayersPanel();renderMainGrid();}; top.appendChild(del); }
-                d.appendChild(top); d.onclick=()=>{commitAndClearSelection();currentLayerIndex=aI;renderLayersPanel();};
+                const nSpan = document.createElement('span'); nSpan.className='text-xs font-bold text-gray-300 truncate'; nSpan.textContent=l.name;
+                ls.appendChild(eye); ls.appendChild(thumbCvs); ls.appendChild(nSpan);
                 
-                if (aI === currentLayerIndex) {
-                    const setDiv = document.createElement('div'); setDiv.className='flex items-center gap-2 mt-2 w-full pt-2 border-t border-border/50 pointer-events-auto';
-                    const opIn = document.createElement('input'); opIn.type='range'; opIn.min='0'; opIn.max='100'; opIn.value=l.opacity*100; opIn.className='flex-1 h-1 bg-[#2a2a32] rounded appearance-none cursor-pointer accent-white'; opIn.onclick=e=>e.stopPropagation(); opIn.oninput=e=>{l.opacity=e.target.value/100;renderMainGrid();};
-                    const mdSel = document.createElement('select'); mdSel.className='bg-base border border-border text-[9px] text-gray-300 rounded px-1 py-0.5 outline-none font-bold uppercase cursor-pointer'; ['normal','multiply','screen','color-dodge'].forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=m;if(l.blendMode===m)o.selected=true;mdSel.appendChild(o);}); mdSel.onclick=e=>e.stopPropagation(); mdSel.onchange=e=>{l.blendMode=e.target.value;renderMainGrid();};
-                    setDiv.appendChild(opIn); setDiv.appendChild(mdSel); d.appendChild(setDiv);
-                } list.appendChild(d);
+                const drg = document.createElement('div'); drg.className='text-gray-500 text-[10px] pointer-events-auto'; drg.innerHTML='<i class="fa-solid fa-grip-lines"></i>';
+                top.appendChild(ls); top.appendChild(drg);
+                
+                // Add Opacity Slider Row
+                const bot = document.createElement('div'); bot.className = 'flex items-center gap-2 w-full pointer-events-auto pl-5';
+                const opIcon = document.createElement('i'); opIcon.className = 'fa-solid fa-droplet text-[9px] text-gray-500';
+                const opSlider = document.createElement('input'); opSlider.type = 'range'; opSlider.min = '0'; opSlider.max = '100'; opSlider.value = Math.round((l.opacity !== undefined ? l.opacity : 1) * 100);
+                opSlider.className = 'w-full h-1 bg-border rounded appearance-none cursor-pointer accent-accent';
+                opSlider.oninput = (e) => { l.opacity = e.target.value / 100; renderMainGrid(); };
+                opSlider.onchange = () => { saveState(); renderLayersPanel(); };
+                bot.appendChild(opIcon); bot.appendChild(opSlider);
+                
+                d.appendChild(top); d.appendChild(bot);
+                d.onclick = () => { if(currentLayerIndex!==aI){currentLayerIndex=aI; renderLayersPanel();} };
+                list.appendChild(d);
+
             });
         }
         function loadWelcomeRecentProjects() {
@@ -1391,6 +1405,182 @@
         function hexToRgb(h) { const r=/^#?([a-f\d])([a-f\d])([a-f\d])$/i; h=h.replace(r,(m,r,g,b)=>r+r+g+g+b+b); const s=/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(h); return s?{r:parseInt(s[1],16),g:parseInt(s[2],16),b:parseInt(s[3],16)}:{r:0,g:0,b:0}; }
 
         document.addEventListener('DOMContentLoaded', init);
+    
+        // --- NEW FEATURES LOGIC (SAFE INJECT) ---
+        
+        // 1. Smart Palette Extractor
+        const btnExtractPalette = document.getElementById('btn-extract-palette');
+        const extractInput = document.getElementById('palette-extract-input');
+        if (btnExtractPalette && extractInput) {
+            btnExtractPalette.addEventListener('click', () => extractInput.click());
+            extractInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const cvs = document.createElement('canvas');
+                        const ctx = cvs.getContext('2d');
+                        const MAX_DIM = 200;
+                        let w = img.width, h = img.height;
+                        if (w > h && w > MAX_DIM) { h *= MAX_DIM/w; w = MAX_DIM; }
+                        else if (h > MAX_DIM) { w *= MAX_DIM/h; h = MAX_DIM; }
+                        cvs.width = w; cvs.height = h;
+                        ctx.drawImage(img, 0, 0, w, h);
+                        
+                        const imgData = ctx.getImageData(0, 0, w, h).data;
+                        const colorCounts = {};
+                        
+                        for (let i = 0; i < imgData.length; i += 4) {
+                            if (imgData[i+3] < 128) continue;
+                            const r = Math.round(imgData[i] / 32) * 32;
+                            const g = Math.round(imgData[i+1] / 32) * 32;
+                            const b = Math.round(imgData[i+2] / 32) * 32;
+                            const hex = "#" + [r,g,b].map(x=>Math.min(255,x).toString(16).padStart(2,'0')).join('');
+                            colorCounts[hex] = (colorCounts[hex] || 0) + 1;
+                        }
+                        
+                        const sortedColors = Object.keys(colorCounts).sort((a,b) => colorCounts[b] - colorCounts[a]);
+                        const topColors = sortedColors.slice(0, 16);
+                        
+                        if (topColors.length > 0) {
+                            RETRO_PALETTE = topColors;
+                            const select = document.getElementById('color-palette-select');
+                            if(select) select.value = 'custom';
+                            initPalette();
+                        }
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // 2. Auto-Outline Feature
+        const btnAutoOutline = document.getElementById('btn-auto-outline');
+        if (btnAutoOutline) {
+            btnAutoOutline.addEventListener('click', () => {
+                saveState();
+                const l = frames[currentFrameIndex].layers[currentLayerIndex];
+                const outlineColor = currentColorSec; // Use secondary color for outline
+                const newPixels = [];
+                
+                for(let y=0; y<gridHeight; y++) {
+                    for(let x=0; x<gridWidth; x++) {
+                        if (l.grid[y][x]) continue; // Skip filled pixels
+                        
+                        // Check neighbors
+                        let hasFilledNeighbor = false;
+                        const n = [[0,-1],[0,1],[-1,0],[1,0]];
+                        for(let i=0; i<n.length; i++) {
+                            const nx = x + n[i][0];
+                            const ny = y + n[i][1];
+                            if (nx >= 0 && nx < gridWidth && ny >= 0 && ny < gridHeight) {
+                                if (l.grid[ny][nx]) {
+                                    hasFilledNeighbor = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (hasFilledNeighbor) {
+                            newPixels.push({x, y});
+                        }
+                    }
+                }
+                
+                newPixels.forEach(p => l.grid[p.y][p.x] = outlineColor);
+                renderMainGrid();
+            });
+        }
+
+        // Override renderMainGrid logic directly in renderCanvas
+        const originalRenderCanvas = renderCanvas;
+        renderCanvas = function(previewOnly = false) {
+            canvasContainer.innerHTML = '';
+            previewCtx.clearRect(0,0, previewCanvas.width, previewCanvas.height);
+            bigPreviewCtx.clearRect(0,0, bigPreviewCanvas.width, bigPreviewCanvas.height);
+            
+            const fr = frames[currentFrameIndex];
+            
+            // Build Main Canvas
+            if(!previewOnly) {
+                const df = document.createDocumentFragment();
+                for(let y=0; y<gridHeight; y++){
+                    for(let x=0; x<gridWidth; x++){
+                        const cell = document.createElement('div');
+                        cell.className = 'pixel-cell';
+                        cell.dataset.x = x; cell.dataset.y = y;
+                        
+                        let finalR=0, finalG=0, finalB=0, finalA=0;
+                        
+                        for(let i=0; i<fr.layers.length; i++){
+                            const l = fr.layers[i];
+                            if(!l.visible) continue;
+                            const c = l.grid[y][x];
+                            if(c){
+                                const rgb = hexToRgb(c);
+                                const alpha = l.opacity !== undefined ? l.opacity : 1;
+                                if (finalA === 0) {
+                                    finalR=rgb.r; finalG=rgb.g; finalB=rgb.b; finalA=alpha;
+                                } else {
+                                    const outA = alpha + finalA * (1 - alpha);
+                                    finalR = (rgb.r * alpha + finalR * finalA * (1 - alpha)) / outA;
+                                    finalG = (rgb.g * alpha + finalG * finalA * (1 - alpha)) / outA;
+                                    finalB = (rgb.b * alpha + finalB * finalA * (1 - alpha)) / outA;
+                                    finalA = outA;
+                                }
+                            }
+                        }
+                        
+                        if(finalA > 0) {
+                            cell.style.backgroundColor = `rgba(${Math.round(finalR)}, ${Math.round(finalG)}, ${Math.round(finalB)}, ${finalA})`;
+                        } else {
+                            cell.style.backgroundColor = 'transparent';
+                        }
+                        
+                        df.appendChild(cell);
+                    }
+                }
+                canvasContainer.appendChild(df);
+            }
+            
+            // Re-render previews
+            const imgData = previewCtx.createImageData(gridWidth, gridHeight);
+            for(let y=0; y<gridHeight; y++){
+                for(let x=0; x<gridWidth; x++){
+                    let finalR=0, finalG=0, finalB=0, finalA=0;
+                    for(let i=0; i<fr.layers.length; i++){
+                        const l = fr.layers[i];
+                        if(!l.visible) continue;
+                        const c = l.grid[y][x];
+                        if(c){
+                            const rgb = hexToRgb(c);
+                            const alpha = l.opacity !== undefined ? l.opacity : 1;
+                            if (finalA === 0) {
+                                finalR=rgb.r; finalG=rgb.g; finalB=rgb.b; finalA=alpha;
+                            } else {
+                                const outA = alpha + finalA * (1 - alpha);
+                                finalR = (rgb.r * alpha + finalR * finalA * (1 - alpha)) / outA;
+                                finalG = (rgb.g * alpha + finalG * finalA * (1 - alpha)) / outA;
+                                finalB = (rgb.b * alpha + finalB * finalA * (1 - alpha)) / outA;
+                                finalA = outA;
+                            }
+                        }
+                    }
+                    const idx = (y*gridWidth+x)*4;
+                    if(finalA > 0) {
+                        imgData.data[idx] = finalR; imgData.data[idx+1] = finalG; imgData.data[idx+2] = finalB; imgData.data[idx+3] = Math.round(finalA * 255);
+                    } else {
+                        imgData.data[idx+3] = 0;
+                    }
+                }
+            }
+            previewCtx.putImageData(imgData, 0, 0);
+            bigPreviewCtx.putImageData(imgData, 0, 0);
+        };
+
     </script>
 </body>
 </html>
