@@ -1074,7 +1074,7 @@
                 if (e.ctrlKey && e.key.toLowerCase()==='z') undo();
             });
             window.addEventListener('keyup', e => { if (e.code==='Space') { spacePressed = false; workspace.style.cursor = 'default'; isPanning = false; } });
-            workspace.addEventListener('wheel', e => { e.preventDefault(); zoom *= (e.deltaY > 0 ? 0.9 : 1.1); zoom = Math.max(0.2, Math.min(zoom, 10)); updateTransform(); }, { passive: false });
+            workspace.addEventListener('wheel', e => { e.preventDefault(); if (e.ctrlKey || e.metaKey) { zoom *= (e.deltaY > 0 ? 0.9 : 1.1); zoom = Math.max(0.2, Math.min(zoom, 10)); updateTransform(); } else { panX -= e.deltaX; panY -= e.deltaY; updateTransform(); } });
             workspace.addEventListener('mousedown', e => { if (e.button===1 || spacePressed) { isPanning = true; workspace.style.cursor = 'grabbing'; e.preventDefault(); } });
             window.addEventListener('mousemove', e => { if (isPanning) { panX += e.movementX; panY += e.movementY; updateTransform(); } });
             
